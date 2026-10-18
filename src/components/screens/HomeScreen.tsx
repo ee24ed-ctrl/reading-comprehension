@@ -128,13 +128,17 @@ export function HomeScreen() {
             >
               أنشئ حساباً جديداً
             </Button>
-            {/* رابط خفي لدخول الأدمن - يظهر عند الضغط المطوّل */}
+            {/* رابط خفي لدخول الأدمن - يظهر عند الضغط على شعار المدرسة */}
             <button
               onClick={() => setShowAdminLink(!showAdminLink)}
-              className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+              className="w-10 h-10 rounded-full overflow-hidden opacity-40 hover:opacity-100 transition-all hover:scale-110"
               title="للإدارة"
             >
-              •
+              <img
+                src="/school-logo.png"
+                alt="مدرسة الساحل الأهلية (بنين)"
+                className="w-full h-full object-contain"
+              />
             </button>
           </div>
 
