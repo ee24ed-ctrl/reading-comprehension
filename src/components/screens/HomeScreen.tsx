@@ -34,10 +34,10 @@ export function HomeScreen() {
   return (
     <div className="min-h-screen bg-gradient-sea flex flex-col">
       {/* الشعار في أعلى الصفحة - بحجم كبير بدون إطار */}
-      <div className="pt-8 pb-2 px-6 flex justify-center">
+      <div className="pt-6 pb-2 px-6 flex justify-center">
         <button
           onClick={() => setShowAdminLink(!showAdminLink)}
-          className="w-32 h-32 md:w-40 md:h-40 transition-transform hover:scale-105"
+          className="w-28 h-28 md:w-36 md:h-36 transition-transform hover:scale-105"
           title="للإدارة"
           aria-label="مدرسة الساحل الأهلية (بنين)"
         >
@@ -50,10 +50,10 @@ export function HomeScreen() {
       </div>
 
       {/* الرأس */}
-      <header className="px-6 pt-2 pb-6 md:pb-10">
+      <header className="px-6 pt-2 pb-4 md:pb-6">
         <div className="max-w-6xl mx-auto text-center">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-primary leading-tight mb-1">
+            <h1 className="text-2xl md:text-4xl font-bold text-primary leading-tight mb-1">
               {DEFAULT_SETTINGS.appName}
             </h1>
             <p className="text-sm md:text-base text-muted-foreground">منصة الفهم القرائي</p>
@@ -62,28 +62,28 @@ export function HomeScreen() {
       </header>
 
       {/* المحتوى الرئيسي */}
-      <main className="flex-1 flex items-center justify-center px-6 pb-12">
-        <div className="w-full max-w-5xl">
+      <main className="flex-1 flex flex-col justify-center px-6 pb-8">
+        <div className="w-full max-w-5xl mx-auto">
           {/* بطاقة الترحيب */}
-          <div className="text-center mb-10 md:mb-14">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/5 border border-primary/10 mb-6">
+          <div className="text-center mb-8 md:mb-10">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/5 border border-primary/10 mb-4">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-sm text-primary font-medium">مدرسة الساحل الأهلية (بنين)</span>
             </div>
-            <h2 className="text-3xl md:text-5xl font-bold text-foreground mb-4 leading-tight">
+            <h2 className="text-2xl md:text-4xl font-bold text-foreground mb-3 leading-tight">
               أهلاً بك في رحلة
               <span className="block text-gradient bg-gradient-primary bg-clip-text text-transparent mt-1">
                 الفهم القرائي
               </span>
             </h2>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
               منصة تعليمية لقياس وتنمية مهارات الفهم القرائي لدى طلابنا من الصف الأول الابتدائي حتى الثالث الثانوي،
               مع متابعة دقيقة من المعلمين والإدارة.
             </p>
           </div>
 
           {/* بطاقات الدخول */}
-          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-4 md:gap-6 max-w-4xl mx-auto">
             {roles.map((role) => {
               const Icon = role.icon;
               return (
@@ -91,7 +91,7 @@ export function HomeScreen() {
                   key={role.key}
                   onMouseEnter={() => setHoveredRole(role.key)}
                   onMouseLeave={() => setHoveredRole(null)}
-                  className="relative overflow-hidden p-6 md:p-8 cursor-pointer border-2 hover:border-primary/30 hover-lift transition-all duration-300 group"
+                  className="relative overflow-hidden p-5 md:p-7 cursor-pointer border-2 hover:border-primary/30 hover-lift transition-all duration-300 group"
                   onClick={role.onClick}
                 >
                   {/* تأثير خلفية عند الـ hover */}
@@ -101,16 +101,16 @@ export function HomeScreen() {
 
                   <div className="relative">
                     <div
-                      className={`w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-gradient-to-br ${role.gradient} flex items-center justify-center mb-5 shadow-lg group-hover:scale-110 transition-transform duration-300`}
+                      className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br ${role.gradient} flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300`}
                     >
-                      <Icon className="w-8 h-8 md:w-10 md:h-10 text-white" strokeWidth={1.5} />
+                      <Icon className="w-7 h-7 md:w-8 md:h-8 text-white" strokeWidth={1.5} />
                     </div>
-                    <h3 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+                    <h3 className="text-xl md:text-2xl font-bold text-foreground mb-2">
                       {role.label}
                     </h3>
-                    <p className="text-muted-foreground leading-relaxed mb-5">{role.description}</p>
+                    <p className="text-muted-foreground leading-relaxed mb-4 text-sm md:text-base">{role.description}</p>
                     <div className="flex items-center gap-2 text-primary font-medium group-hover:gap-3 transition-all">
-                      <span>ادخل الآن</span>
+                      <span className="text-sm">ادخل الآن</span>
                       <ArrowLeft className="w-4 h-4" />
                     </div>
                   </div>
@@ -120,12 +120,13 @@ export function HomeScreen() {
           </div>
 
           {/* روابط إضافية */}
-          <div className="mt-10 flex flex-col md:flex-row items-center justify-center gap-4">
+          <div className="mt-6 flex flex-col md:flex-row items-center justify-center gap-3">
             <p className="text-sm text-muted-foreground">ليس لديك حساب؟</p>
             <Button
               variant="outline"
               onClick={() => setScreen("auth_register")}
               className="rounded-full"
+              size="sm"
             >
               أنشئ حساباً جديداً
             </Button>
@@ -133,7 +134,7 @@ export function HomeScreen() {
 
           {/* رابط دخول الأدمن - يظهر بعد الضغط على الشعار */}
           {showAdminLink && (
-            <div className="mt-6 text-center animate-slide-up">
+            <div className="mt-4 text-center animate-slide-up">
               <button
                 onClick={() => setScreen("auth_login")}
                 className="inline-flex items-center gap-2 px-4 py-2 text-sm text-foreground/60 hover:text-foreground border border-dashed border-muted-foreground/30 rounded-lg hover:border-foreground/30 transition-all"
@@ -145,7 +146,7 @@ export function HomeScreen() {
           )}
 
           {/* إحصائيات سريعة */}
-          <div className="mt-14 grid grid-cols-3 gap-4 max-w-2xl mx-auto">
+          <div className="mt-6 md:mt-8 grid grid-cols-3 gap-3 md:gap-4 max-w-2xl mx-auto">
             <StatCard number="12" label="صف دراسي" />
             <StatCard number="128+" label="سؤالاً تفاعلياً" />
             <StatCard number="4" label="مراحل دراسية" />
@@ -154,7 +155,7 @@ export function HomeScreen() {
       </main>
 
       {/* التذييل */}
-      <footer className="mt-auto py-6 px-6 text-center text-sm text-muted-foreground border-t border-border/40">
+      <footer className="mt-auto py-4 px-6 text-center text-xs md:text-sm text-muted-foreground border-t border-border/40">
         <p>© 2025 مدرسة الساحل الأهلية (بنين) — منصة الفهم القرائي</p>
       </footer>
     </div>
