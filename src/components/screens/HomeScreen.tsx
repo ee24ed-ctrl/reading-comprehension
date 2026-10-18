@@ -37,8 +37,14 @@ export function HomeScreen() {
       <header className="px-6 py-8 md:py-12">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-gradient-primary flex items-center justify-center shadow-lg">
-              <BookOpen className="w-6 h-6 md:w-7 md:h-7 text-white" />
+            {/* شعار المدرسة الفعلي */}
+            <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-white shadow-md border border-border/60 overflow-hidden p-1.5 flex items-center justify-center">
+              { }
+              <img
+                src="/school-logo.png"
+                alt="شعار مدرسة الساحل الأهلية (بنين)"
+                className="w-full h-full object-contain"
+              />
             </div>
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-primary leading-tight">

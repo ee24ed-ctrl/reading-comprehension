@@ -103,8 +103,13 @@ export function AuthScreen({ mode }: { mode: "login" | "register" }) {
       <main className="flex-1 flex items-center justify-center px-6 py-8">
         <div className="w-full max-w-md">
           <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-primary mb-4 shadow-lg">
-              <BookOpen className="w-8 h-8 text-white" />
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white shadow-lg border border-border/60 overflow-hidden p-1.5 mb-4">
+              { }
+              <img
+                src="/school-logo.png"
+                alt="شعار مدرسة الساحل الأهلية (بنين)"
+                className="w-full h-full object-contain"
+              />
             </div>
             <h1 className="text-2xl font-bold text-foreground">
               {mode === "login" ? "تسجيل الدخول" : "إنشاء حساب جديد"}

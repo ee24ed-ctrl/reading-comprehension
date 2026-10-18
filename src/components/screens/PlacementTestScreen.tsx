@@ -152,8 +152,13 @@ export function PlacementTestScreen() {
         <div className="max-w-5xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-4 mb-2">
             <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-lg bg-gradient-primary flex items-center justify-center">
-                <BookOpen className="w-5 h-5 text-white" />
+              <div className="w-9 h-9 rounded-lg bg-white shadow-sm border border-border/60 overflow-hidden p-1 flex items-center justify-center">
+                { }
+                <img
+                  src="/school-logo.png"
+                  alt="شعار مدرسة الساحل الأهلية (بنين)"
+                  className="w-full h-full object-contain"
+                />
               </div>
               <div>
                 <h2 className="font-bold text-sm">اختبار تحديد المستوى</h2>

@@ -87,10 +87,15 @@ export function SplashScreen({ type }: { type: "app" | "school" }) {
           </>
         ) : (
           <>
-            {/* شعار المدرسة - واجهة مع قبة */}
-            <div className="relative w-36 h-36 md:w-52 md:h-52 mb-8">
-              <div className="absolute inset-0 rounded-full bg-white shadow-2xl shadow-primary/20 flex items-center justify-center border-4 border-primary/10">
-                <GraduationCap className="w-20 h-20 md:w-28 md:h-28 text-primary" strokeWidth={1.5} />
+            {/* شعار المدرسة - الصورة الفعلية */}
+            <div className="relative w-40 h-40 md:w-56 md:h-56 mb-8">
+              <div className="absolute inset-0 rounded-full bg-white shadow-2xl shadow-primary/20 flex items-center justify-center border-4 border-primary/10 overflow-hidden p-3">
+                { }
+                <img
+                  src="/school-logo.png"
+                  alt="شعار مدرسة الساحل الأهلية (بنين)"
+                  className="w-full h-full object-contain"
+                />
               </div>
               {/* تأثير دائرة خارجية */}
               <div className="absolute inset-0 rounded-full border-2 border-accent/30 animate-ping" style={{ animationDuration: "2.5s" }} />

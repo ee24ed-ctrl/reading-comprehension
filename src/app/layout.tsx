@@ -30,6 +30,10 @@ export const metadata: Metadata = {
     "تحسين القراءة",
   ],
   authors: [{ name: "مدرسة الساحل الأهلية (بنين)" }],
+  icons: {
+    icon: "/school-logo.png",
+    apple: "/school-logo.png",
+  },
 };
 
 export default function RootLayout({
