@@ -13,6 +13,9 @@ import type {
   StageKey,
   ClassificationLevel,
   SkillKey,
+  TrainingExercise,
+  TrainingResult,
+  PostTest,
 } from "./types";
 import {
   SEED_CLASSROOMS,
@@ -24,6 +27,7 @@ import {
   DEFAULT_SYSTEM_SETTINGS,
 } from "./seed-data";
 import { getPlacementTestQuestions } from "./questions";
+import { getTrainingsBySkill, getTrainingsByLevel } from "./trainings";
 
 // شاشات التطبيق
 export type Screen =
@@ -37,7 +41,12 @@ export type Screen =
   | "test_result"
   | "improvement_plan"
   | "teacher_dashboard"
-  | "admin_dashboard";
+  | "admin_dashboard"
+  | "trainings_list"      // قائمة التدريبات للمهارة الضعيفة
+  | "training_exercise"    // تنفيذ تدريب محدد
+  | "training_result"      // نتيجة التدريب
+  | "post_test"            // الاختبار البعدي بعد التدريب
+  | "post_test_result";    // نتيجة الاختبار البعدي
 
 interface AppState {
   // التنقل
@@ -92,6 +101,50 @@ interface AppState {
   getStudentPlan: (studentId: string) => ImprovementPlan | null;
   getClassificationsByClassroom: (classroomId: string) => Record<ClassificationLevel, number>;
   getTeachersByClassroom: (classroomId: string) => User[];
+
+  // ====== التدريبات والاختبار البعدي ======
+  // نتائج التدريبات لكل الطلاب
+  trainingResults: TrainingResult[];
+  // نتائج الاختبارات البعدية
+  postTests: PostTest[];
+  // التدريب الحالي قيد التنفيذ
+  currentTraining: {
+    exercise: TrainingExercise;
+    currentQuestionIndex: number;
+    answers: { questionId: string; selectedAnswer: string; isCorrect: boolean }[];
+    startedAt: number;
+    showHint: boolean;
+    showExplanation: boolean;
+  } | null;
+  // الاختبار البعدي الحالي
+  currentPostTest: {
+    questions: Question[];
+    currentQuestionIndex: number;
+    answers: { questionId: string; selectedAnswer: string; timeSpentSec: number }[];
+    startedAt: number;
+    skill: SkillKey;
+    studentId: string;
+    preTestPercentage: number;
+  } | null;
+
+  // إجراءات التدريبات
+  startTraining: (stage: StageKey, skill: SkillKey, level: 1 | 2 | 3) => void;
+  answerTrainingQuestion: (questionId: string, selectedAnswer: string) => void;
+  nextTrainingQuestion: () => void;
+  toggleTrainingHint: () => void;
+  showTrainingExplanation: () => void;
+  finishTraining: () => TrainingResult | null;
+
+  // إجراءات الاختبار البعدي
+  startPostTest: (skill: SkillKey, studentId: string, preTestPercentage: number) => void;
+  answerPostTestQuestion: (questionId: string, selectedAnswer: string) => void;
+  nextPostTestQuestion: () => void;
+  previousPostTestQuestion: () => void;
+  finishPostTest: () => PostTest | null;
+
+  // مساعدات التدريبات
+  getTrainingsBySkillForStudent: (studentId: string, skill: SkillKey) => TrainingResult[];
+  getPostTestsForStudent: (studentId: string) => PostTest[];
 }
 
 interface RegisterData {
@@ -116,6 +169,9 @@ function getInitialData() {
     improvementPlans,
     customQuestions: [],
     settings: DEFAULT_SYSTEM_SETTINGS,
+    // حقول التدريبات والاختبارات البعدية
+    trainingResults: [] as TrainingResult[],
+    postTests: [] as PostTest[],
   };
 }
 
@@ -212,6 +268,11 @@ export const useAppStore = create<AppState>()(
         improvementPlans: initial.improvementPlans,
         customQuestions: initial.customQuestions,
         settings: initial.settings,
+        // حقول التدريبات والاختبارات البعدية
+        trainingResults: initial.trainingResults,
+        postTests: initial.postTests,
+        currentTraining: null,
+        currentPostTest: null,
 
         currentTest: null,
         startPlacementTest: (stage) => {
@@ -454,11 +515,237 @@ export const useAppStore = create<AppState>()(
             (u) => u.role === "teacher" && u.approved && u.classroomIds?.includes(classroomId)
           );
         },
+
+        // ====== دوال التدريبات ======
+        startTraining: (stage, skill, level) => {
+          const exercise = getTrainingsByLevel(stage, skill, level);
+          if (!exercise) return;
+          set({
+            currentTraining: {
+              exercise,
+              currentQuestionIndex: 0,
+              answers: [],
+              startedAt: Date.now(),
+              showHint: false,
+              showExplanation: false,
+            },
+            currentScreen: "training_exercise",
+          });
+        },
+
+        answerTrainingQuestion: (questionId, selectedAnswer) => {
+          const training = get().currentTraining;
+          if (!training) return;
+          const question = training.exercise.questions.find((q) => q.id === questionId);
+          if (!question) return;
+          const isCorrect = selectedAnswer === question.correctAnswer;
+          // تحديث أو إضافة الإجابة
+          const existing = training.answers.findIndex((a) => a.questionId === questionId);
+          const newAnswers = [...training.answers];
+          if (existing >= 0) {
+            newAnswers[existing] = { questionId, selectedAnswer, isCorrect };
+          } else {
+            newAnswers.push({ questionId, selectedAnswer, isCorrect });
+          }
+          // عرض الشرح بعد الإجابة
+          set({
+            currentTraining: {
+              ...training,
+              answers: newAnswers,
+              showExplanation: true,
+              showHint: false,
+            },
+          });
+        },
+
+        nextTrainingQuestion: () => {
+          const training = get().currentTraining;
+          if (!training) return;
+          if (training.currentQuestionIndex < training.exercise.questions.length - 1) {
+            set({
+              currentTraining: {
+                ...training,
+                currentQuestionIndex: training.currentQuestionIndex + 1,
+                showExplanation: false,
+                showHint: false,
+              },
+            });
+          }
+        },
+
+        toggleTrainingHint: () => {
+          const training = get().currentTraining;
+          if (!training) return;
+          set({
+            currentTraining: {
+              ...training,
+              showHint: !training.showHint,
+            },
+          });
+        },
+
+        showTrainingExplanation: () => {
+          const training = get().currentTraining;
+          if (!training) return;
+          set({
+            currentTraining: {
+              ...training,
+              showExplanation: true,
+            },
+          });
+        },
+
+        finishTraining: () => {
+          const training = get().currentTraining;
+          const user = get().currentUser;
+          if (!training || !user) return null;
+
+          const correctCount = training.answers.filter((a) => a.isCorrect).length;
+          const totalQuestions = training.exercise.questions.length;
+          const percentage = Math.round((correctCount / totalQuestions) * 100);
+          const passed = percentage >= 70;
+          const timeSpentSec = Math.round((Date.now() - training.startedAt) / 1000);
+
+          const result: TrainingResult = {
+            id: `training_result_${user.id}_${Date.now()}`,
+            studentId: user.id,
+            exerciseId: training.exercise.id,
+            skill: training.exercise.skill,
+            level: training.exercise.level,
+            takenAt: new Date().toISOString(),
+            totalQuestions,
+            correctCount,
+            percentage,
+            passed,
+            timeSpentSec,
+          };
+
+          set({
+            trainingResults: [...get().trainingResults, result],
+            currentTraining: null,
+            currentScreen: "training_result",
+          });
+
+          return result;
+        },
+
+        // ====== دوال الاختبار البعدي ======
+        startPostTest: (skill, studentId, preTestPercentage) => {
+          // استخدم أسئلة الاختبار القبلي لنفس المهارة
+          const user = get().users.find((u) => u.id === studentId);
+          if (!user || !user.gradeKey) return;
+          const stage = getStageFromGrade(user.gradeKey);
+          // خذ أسئلة من بنك الأسئلة للمهارة المختارة
+          const stageQuestions = getPlacementTestQuestions(stage, 5);
+          // فلترة للمهارة المحددة
+          const skillQuestions = stageQuestions.filter((q) => q.skill === skill);
+          // إذا لم تكن كافية، خذ أي أسئلة من المرحلة
+          const questions = skillQuestions.length >= 5 ? skillQuestions.slice(0, 5) : stageQuestions.slice(0, 5);
+
+          set({
+            currentPostTest: {
+              questions,
+              currentQuestionIndex: 0,
+              answers: [],
+              startedAt: Date.now(),
+              skill,
+              studentId,
+              preTestPercentage,
+            },
+            currentScreen: "post_test",
+          });
+        },
+
+        answerPostTestQuestion: (questionId, selectedAnswer) => {
+          const test = get().currentPostTest;
+          if (!test) return;
+          const existing = test.answers.findIndex((a) => a.questionId === questionId);
+          const newAnswers = [...test.answers];
+          if (existing >= 0) {
+            newAnswers[existing] = { questionId, selectedAnswer, timeSpentSec: 0 };
+          } else {
+            newAnswers.push({ questionId, selectedAnswer, timeSpentSec: 0 });
+          }
+          set({ currentPostTest: { ...test, answers: newAnswers } });
+        },
+
+        nextPostTestQuestion: () => {
+          const test = get().currentPostTest;
+          if (!test) return;
+          if (test.currentQuestionIndex < test.questions.length - 1) {
+            set({
+              currentPostTest: { ...test, currentQuestionIndex: test.currentQuestionIndex + 1 },
+            });
+          }
+        },
+
+        previousPostTestQuestion: () => {
+          const test = get().currentPostTest;
+          if (!test) return;
+          if (test.currentQuestionIndex > 0) {
+            set({
+              currentPostTest: { ...test, currentQuestionIndex: test.currentQuestionIndex - 1 },
+            });
+          }
+        },
+
+        finishPostTest: () => {
+          const test = get().currentPostTest;
+          if (!test) return null;
+
+          let correctCount = 0;
+          const detailedAnswers = test.questions.map((q) => {
+            const ans = test.answers.find((a) => a.questionId === q.id);
+            const isCorrect = ans?.selectedAnswer === q.correctAnswer;
+            if (isCorrect) correctCount++;
+            return {
+              questionId: q.id,
+              selectedAnswer: ans?.selectedAnswer || "",
+              isCorrect,
+              skill: q.skill,
+              timeSpentSec: ans?.timeSpentSec || 0,
+            };
+          });
+
+          const percentage = Math.round((correctCount / test.questions.length) * 100);
+          const durationSec = Math.round((Date.now() - test.startedAt) / 1000);
+          const improvedFromPre = percentage - test.preTestPercentage;
+
+          const result: PostTest = {
+            id: `post_test_${test.studentId}_${Date.now()}`,
+            studentId: test.studentId,
+            skill: test.skill,
+            takenAt: new Date().toISOString(),
+            totalQuestions: test.questions.length,
+            correctCount,
+            percentage,
+            improvedFromPre,
+            durationSec,
+            answers: detailedAnswers,
+            questions: [...test.questions],
+          };
+
+          set({
+            postTests: [...get().postTests, result],
+            currentPostTest: null,
+            currentScreen: "post_test_result",
+          });
+
+          return result;
+        },
+
+        getTrainingsBySkillForStudent: (studentId, skill) => {
+          return get().trainingResults.filter((r) => r.studentId === studentId && r.skill === skill);
+        },
+
+        getPostTestsForStudent: (studentId) => {
+          return get().postTests.filter((p) => p.studentId === studentId);
+        },
       };
     },
     {
       name: "saahil-reading-platform",
-      version: 7, // رفع الإصدار لإصلاح خطأ infinite loop نهائياً
+      version: 8, // رفع الإصدار لإضافة نظام التدريبات والاختبارات البعدية
       // تجنّب تخزين currentUser و currentTest و currentScreen للحفاظ على بداية نظيفة
       partialize: (state) => ({
         users: state.users,
@@ -467,12 +754,15 @@ export const useAppStore = create<AppState>()(
         improvementPlans: state.improvementPlans,
         customQuestions: state.customQuestions,
         settings: state.settings,
+        // إضافة نتائج التدريبات والاختبارات البعدية للتخزين
+        trainingResults: state.trainingResults,
+        postTests: state.postTests,
       }),
       // ترحيل آمن: عند تغيّر الإصدار أو وجود بيانات تالفة، أعد بناء البيانات
       migrate: (persistedState: any, version: number) => {
         try {
-          // أي إصدار أقل من 7، أو بيانات تالفة، نعيد بناءها بالكامل
-          if (version < 7 || !persistedState || typeof persistedState !== "object") {
+          // أي إصدار أقل من 8، أو بيانات تالفة، نعيد بناءها بالكامل
+          if (version < 8 || !persistedState || typeof persistedState !== "object") {
             const fresh = getInitialData();
             return {
               ...persistedState,

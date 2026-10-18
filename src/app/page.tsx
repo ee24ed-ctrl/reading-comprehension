@@ -10,13 +10,28 @@ import { ImprovementPlanScreen } from "@/components/screens/ImprovementPlanScree
 import { StudentDashboard } from "@/components/screens/StudentDashboard";
 import { TeacherDashboard } from "@/components/screens/TeacherDashboard";
 import { AdminDashboard } from "@/components/screens/AdminDashboard";
+import { TrainingsListScreen } from "@/components/screens/TrainingsListScreen";
+import { TrainingExerciseScreen } from "@/components/screens/TrainingExerciseScreen";
+import { TrainingResultScreen } from "@/components/screens/TrainingResultScreen";
+import { PostTestScreen } from "@/components/screens/PostTestScreen";
+import { PostTestResultScreen } from "@/components/screens/PostTestResultScreen";
 
 export default function Home() {
   const currentScreen = useAppStore((s) => s.currentScreen);
   const currentUser = useAppStore((s) => s.currentUser);
 
-  // التحقق من تسجيل الدخول للوصول للوحات
-  const needsAuth = ["student_dashboard", "teacher_dashboard", "admin_dashboard"].includes(currentScreen);
+  // التحقق من تسجيل الدخول للوصول للوحات والشاشات التدريبية
+  const needsAuth = [
+    "student_dashboard",
+    "teacher_dashboard",
+    "admin_dashboard",
+    "trainings_list",
+    "training_exercise",
+    "training_result",
+    "post_test",
+    "post_test_result",
+    "improvement_plan",
+  ].includes(currentScreen);
   if (needsAuth && !currentUser) {
     return <AuthScreen mode="login" />;
   }
@@ -44,6 +59,16 @@ export default function Home() {
       return <TeacherDashboard />;
     case "admin_dashboard":
       return <AdminDashboard />;
+    case "trainings_list":
+      return <TrainingsListScreen />;
+    case "training_exercise":
+      return <TrainingExerciseScreen />;
+    case "training_result":
+      return <TrainingResultScreen />;
+    case "post_test":
+      return <PostTestScreen />;
+    case "post_test_result":
+      return <PostTestResultScreen />;
     default:
       return <HomeScreen />;
   }

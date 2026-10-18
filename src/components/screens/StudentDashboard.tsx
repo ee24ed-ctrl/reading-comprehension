@@ -20,6 +20,7 @@ import {
   Sparkles,
   CheckCircle2,
   AlertCircle,
+  Brain,
 } from "lucide-react";
 import {
   CLASSIFICATION_INFO,
@@ -237,6 +238,43 @@ export function StudentDashboard() {
                   </CardContent>
                 </Card>
               </div>
+
+              {/* بطاقة تدريبات تحسين المهارات */}
+              <Card className="bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Brain className="w-5 h-5 text-primary" />
+                    تدريبات تحسين المهارات
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+                    بناءً على نتيجة اختبار تحديد المستوى، تم إعداد تدريبات تفاعلية لتحسين المهارات الضعيفة.
+                    كل تدريب يحتوي على شرح لكل سؤال. بعد إكمال التدريبات، اختبر نفسك في الاختبار البعدي لقياس التحسّن.
+                  </p>
+                  <div className="grid grid-cols-3 gap-2 mb-4 text-center">
+                    <div className="p-2 bg-card/70 rounded-lg">
+                      <div className="text-xs text-muted-foreground">التدريبات</div>
+                      <div className="font-bold">60+</div>
+                    </div>
+                    <div className="p-2 bg-card/70 rounded-lg">
+                      <div className="text-xs text-muted-foreground">المهارات</div>
+                      <div className="font-bold">5</div>
+                    </div>
+                    <div className="p-2 bg-card/70 rounded-lg">
+                      <div className="text-xs text-muted-foreground">المستويات</div>
+                      <div className="font-bold">3</div>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => setScreen("trainings_list")}
+                    className="w-full gap-2"
+                  >
+                    <BookOpen className="w-4 h-4" />
+                    ابدأ التدريبات
+                  </Button>
+                </CardContent>
+              </Card>
 
               {/* المهام الأسبوعية الحالية */}
               {plan && (

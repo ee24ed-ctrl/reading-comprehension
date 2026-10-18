@@ -40,6 +40,7 @@ import {
   TrendingUp,
   MessageSquare,
   Save,
+  Target,
   GraduationCap,
 } from "lucide-react";
 import {
@@ -747,6 +748,8 @@ function StudentDetailDialog({ studentId, onClose }: { studentId: string | null;
   const testResults = useAppStore((s) => s.testResults);
   const improvementPlans = useAppStore((s) => s.improvementPlans);
   const classrooms = useAppStore((s) => s.classrooms);
+  const trainingResults = useAppStore((s) => s.trainingResults);
+  const postTests = useAppStore((s) => s.postTests);
 
   if (!studentId) return null;
   const student = users.find((u) => u.id === studentId);
@@ -757,6 +760,14 @@ function StudentDetailDialog({ studentId, onClose }: { studentId: string | null;
     .sort((a, b) => new Date(b.takenAt).getTime() - new Date(a.takenAt).getTime());
   const latest = results[0];
   const plan = improvementPlans.find((p) => p.studentId === studentId);
+
+  // نتائج التدريبات والاختبارات البعدية للطالب
+  const studentTrainings = trainingResults
+    .filter((r) => r.studentId === studentId)
+    .sort((a, b) => new Date(b.takenAt).getTime() - new Date(a.takenAt).getTime());
+  const studentPostTests = postTests
+    .filter((p) => p.studentId === studentId)
+    .sort((a, b) => new Date(b.takenAt).getTime() - new Date(a.takenAt).getTime());
   const classroom = classrooms.find((c) => c.id === student.classroomId);
 
   return (
@@ -869,7 +880,86 @@ function StudentDetailDialog({ studentId, onClose }: { studentId: string | null;
             </Card>
           )}
 
-          {/* تاريخ الاختبارات */}
+          {/* تاريخ التدريبات */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-primary" />
+                تدريبات الطالب ({studentTrainings.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {studentTrainings.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-3">
+                  لم يكمل الطالب أي تدريب بعد
+                </p>
+              ) : (
+                <div className="space-y-2 max-h-40 overflow-y-auto custom-scroll">
+                  {studentTrainings.slice(0, 5).map((r, idx) => (
+                    <div key={r.id} className="flex items-center justify-between text-xs p-2 border rounded">
+                      <div>
+                        <span className="font-medium">
+                          {SKILL_ICONS[r.skill as keyof typeof SKILL_ICONS]} {SKILL_LABELS[r.skill as keyof typeof SKILL_LABELS]}
+                        </span>
+                        <span className="text-muted-foreground mr-2">
+                          مستوى {r.level === 1 ? "أساسي" : r.level === 2 ? "متوسط" : "متقدم"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono">{r.percentage}%</span>
+                        <Badge variant="outline" className={`text-xs ${r.passed ? "text-emerald-700 border-emerald-300" : "text-amber-700 border-amber-300"}`}>
+                          {r.passed ? "ناجح" : "غير ناجح"}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* نتائج الاختبارات البعدية */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Target className="w-4 h-4 text-accent" />
+                الاختبارات البعدية ({studentPostTests.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {studentPostTests.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-3">
+                  لم يجرِ الطالب أي اختبار بعدي بعد
+                </p>
+              ) : (
+                <div className="space-y-2 max-h-40 overflow-y-auto custom-scroll">
+                  {studentPostTests.slice(0, 5).map((p, idx) => (
+                    <div key={p.id} className="flex items-center justify-between text-xs p-2 border rounded">
+                      <div>
+                        <span className="font-medium">
+                          {SKILL_ICONS[p.skill as keyof typeof SKILL_ICONS]} {SKILL_LABELS[p.skill as keyof typeof SKILL_LABELS]}
+                        </span>
+                        <span className="text-muted-foreground mr-2">
+                          {new Date(p.takenAt).toLocaleDateString("ar-SA")}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono">{p.percentage}%</span>
+                        <Badge
+                          variant="outline"
+                          className={`text-xs ${p.improvedFromPre >= 0 ? "text-emerald-700 border-emerald-300" : "text-rose-700 border-rose-300"}`}
+                        >
+                          {p.improvedFromPre >= 0 ? `+${p.improvedFromPre}%` : `${p.improvedFromPre}%`}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* تاريخ الاختبارات القبلية */}
           <Card>
             <CardHeader>
               <CardTitle className="text-sm">تاريخ الاختبارات ({results.length})</CardTitle>

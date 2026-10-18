@@ -133,6 +133,63 @@ export interface WeeklyTask {
   completed: boolean;
 }
 
+// تدريب لعلاج مهارة معينة (يتكون من مستويات متدرجة)
+export interface TrainingExercise {
+  id: string;
+  stage: StageKey; // المرحلة الدراسية
+  skill: SkillKey; // المهارة المستهدفة
+  level: 1 | 2 | 3; // المستوى: 1 أساسي، 2 متوسط، 3 متقدم
+  title: string;
+  description: string;
+  // نص التدريب أو التعليمات
+  passage: string;
+  // الأسئلة التدريبية (مع شرح الحل لكل سؤال)
+  questions: TrainingQuestion[];
+  // تلميحات للمساعدة
+  hints?: string[];
+  estimatedMinutes: number;
+}
+
+// سؤال في التدريب (يحتوي على شرح للإجابة الصحيحة)
+export interface TrainingQuestion {
+  id: string;
+  questionText: string;
+  options: string[];
+  correctAnswer: string;
+  explanation: string; // شرح لماذا الإجابة الصحيحة هي الصحيحة
+  hint?: string; // تلميح عند الحاجة
+}
+
+// نتيجة تدريب طالب
+export interface TrainingResult {
+  id: string;
+  studentId: string;
+  exerciseId: string;
+  skill: SkillKey;
+  level: 1 | 2 | 3;
+  takenAt: string;
+  totalQuestions: number;
+  correctCount: number;
+  percentage: number;
+  passed: boolean; // >= 70% للنجاح
+  timeSpentSec: number;
+}
+
+// اختبار بعدي (يُجرى بعد إكمال التدريبات لقياس التحسّن)
+export interface PostTest {
+  id: string;
+  studentId: string;
+  skill: SkillKey; // المهارة المُختبَرة
+  takenAt: string;
+  totalQuestions: number;
+  correctCount: number;
+  percentage: number;
+  improvedFromPre: number; // الفرق عن الاختبار القبلي
+  durationSec: number;
+  answers: StudentAnswer[];
+  questions?: Question[];
+}
+
 // مستخدم في النظام
 export interface User {
   id: string;
