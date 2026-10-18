@@ -226,3 +226,34 @@
     box-shadow: 0 10px 30px -10px oklch(0.3 0.04 220 / 0.3);
   }
 }
+
+/* ============ قواعد اتجاه RTL للأيقونات ============ */
+/* في وضع RTL، الأيقونات الاتجاهية يجب أن تنعكس لتعبّر عن المعنى الصحيح */
+/* لاحظ: نستخدم [dir="rtl"] كـ selector لتطبيق القاعدة على وضع RTL فقط */
+
+/* الأسهم الأفقية - تنعكس في RTL */
+[dir="rtl"] .rtl-flip {
+  transform: scaleX(-1);
+}
+
+/* تطبيق الانعكاس على أيقونات Lucide المحددة في وضع RTL */
+/* نطبّق على svg داخل عناصر معيّنة لتجنب التأثير على كل الأيقونات */
+[dir="rtl"] .icon-rtl-auto svg.lucide-chevron-right,
+[dir="rtl"] .icon-rtl-auto svg.lucide-chevron-left,
+[dir="rtl"] .icon-rtl-auto svg.lucide-arrow-right,
+[dir="rtl"] .icon-rtl-auto svg.lucide-arrow-left {
+  transform: scaleX(-1);
+}
+
+/* تطبيق مباشر على الأيقونات المنفردة (للحالات الخاصة) */
+[dir="rtl"] svg.lucide-arrow-right,
+[dir="rtl"] svg.lucide-arrow-left {
+  /* نعكس هذه الأيقونات افتراضياً في RTL لأنها تشير لاتجاه أفقي */
+  transform: scaleX(-1);
+}
+
+/* ChevronRight و ChevronLeft في أزرار التنقل - نعكسها في RTL */
+[dir="rtl"] .rtl-rotate svg.lucide-chevron-right,
+[dir="rtl"] .rtl-rotate svg.lucide-chevron-left {
+  transform: scaleX(-1);
+}

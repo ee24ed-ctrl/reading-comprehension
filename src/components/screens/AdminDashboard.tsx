@@ -279,7 +279,7 @@ export function AdminDashboard() {
       <header className="sticky top-0 z-40 bg-card/95 backdrop-blur border-b border-border/60">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-white shadow-sm border border-border/60 overflow-hidden p-1 flex items-center justify-center">
+            <div className="w-12 h-12 flex items-center justify-center">
               { }
               <img
                 src="/school-logo.png"

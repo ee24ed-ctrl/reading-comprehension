@@ -103,7 +103,7 @@ export function AuthScreen({ mode }: { mode: "login" | "register" }) {
       <main className="flex-1 flex items-center justify-center px-6 py-8">
         <div className="w-full max-w-md">
           <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white shadow-lg border border-border/60 overflow-hidden p-1.5 mb-4">
+            <div className="inline-flex items-center justify-center w-24 h-24 mb-4">
               { }
               <img
                 src="/school-logo.png"

@@ -152,7 +152,7 @@ export function PlacementTestScreen() {
         <div className="max-w-5xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-4 mb-2">
             <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-lg bg-white shadow-sm border border-border/60 overflow-hidden p-1 flex items-center justify-center">
+              <div className="w-11 h-11 flex items-center justify-center">
                 { }
                 <img
                   src="/school-logo.png"

@@ -37,8 +37,8 @@ export function HomeScreen() {
       <header className="px-6 py-8 md:py-12">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {/* شعار المدرسة الفعلي */}
-            <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-white shadow-md border border-border/60 overflow-hidden p-1.5 flex items-center justify-center">
+            {/* شعار المدرسة الفعلي بدون إطار */}
+            <div className="w-14 h-14 md:w-16 md:h-16 flex items-center justify-center">
               { }
               <img
                 src="/school-logo.png"

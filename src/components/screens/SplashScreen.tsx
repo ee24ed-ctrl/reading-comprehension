@@ -108,10 +108,10 @@ export function SplashScreen({ type }: { type: "app" | "school" }) {
           </p>
         </div>
 
-        {/* زر التخطي في الأعلى يمين */}
+        {/* زر التخطي في الأعلى يمين (مناسب لـ RTL) */}
         <button
           onClick={handleSkip}
-          className="absolute top-6 left-6 z-20 flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-white text-sm font-medium hover:bg-white/25 transition-all"
+          className="absolute top-6 right-6 z-20 flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-white text-sm font-medium hover:bg-white/25 transition-all"
           aria-label="تخطي المقدمة"
         >
           <span>تخطي</span>
@@ -180,18 +180,13 @@ export function SplashScreen({ type }: { type: "app" | "school" }) {
           transition: "all 1.2s ease-out",
         }}
       >
-        {/* شعار المدرسة - الصورة الفعلية */}
-        <div className="relative w-40 h-40 md:w-56 md:h-56 mb-8">
-          <div className="absolute inset-0 rounded-full bg-white shadow-2xl shadow-primary/20 flex items-center justify-center border-4 border-primary/10 overflow-hidden p-3">
-            { }
-            <img
-              src="/school-logo.png"
-              alt="شعار مدرسة الساحل الأهلية (بنين)"
-              className="w-full h-full object-contain"
-            />
-          </div>
-          {/* تأثير دائرة خارجية */}
-          <div className="absolute inset-0 rounded-full border-2 border-accent/30 animate-ping" style={{ animationDuration: "2.5s" }} />
+        {/* شعار المدرسة - الصورة الفعلية بدون إطار */}
+        <div className="relative w-48 h-48 md:w-64 md:h-64 mb-8 flex items-center justify-center">
+          <img
+            src="/school-logo.png"
+            alt="شعار مدرسة الساحل الأهلية (بنين)"
+            className="w-full h-full object-contain drop-shadow-lg"
+          />
         </div>
         <h2 className="text-2xl md:text-4xl font-bold text-primary mb-2">
           مدرسة الساحل الأهلية

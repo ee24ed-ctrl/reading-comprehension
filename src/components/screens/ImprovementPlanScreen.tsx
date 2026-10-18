@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   Circle,
   ChevronRight,
+  ChevronLeft,
   Sparkles,
   MessageSquare,
   ArrowRight,
@@ -285,7 +286,7 @@ export function ImprovementPlanScreen() {
                 </p>
                 <Button variant="outline" size="sm" className="gap-2">
                   عرض منحنى تقدمي
-                  <ChevronRight className="w-4 h-4" />
+                  <ChevronLeft className="w-4 h-4" />
                 </Button>
               </div>
             </div>
