@@ -428,7 +428,7 @@ export const useAppStore = create<AppState>()(
     },
     {
       name: "saahil-reading-platform",
-      version: 3, // رفع الإصدار لإجبار إعادة التحميل عند إضافة أسئلة جديدة
+      version: 4, // رفع الإصدار لإجبار إعادة التحميل مع معالجة أخطاء Migration
       // تجنّب تخزين currentUser و currentTest و currentScreen للحفاظ على بداية نظيفة
       partialize: (state) => ({
         users: state.users,
@@ -438,22 +438,72 @@ export const useAppStore = create<AppState>()(
         customQuestions: state.customQuestions,
         settings: state.settings,
       }),
-      // عند تغيّر الإصدار، أعد بناء البيانات من المصدر
+      // ترحيل آمن: عند تغيّر الإصدار أو وجود بيانات تالفة، أعد بناء البيانات
       migrate: (persistedState: any, version: number) => {
-        if (version < 3) {
-          // إعادة بناء البيانات التجريبية بالكامل عند الانتقال للإصدار 3
-          const fresh = getInitialData();
-          return {
-            ...persistedState,
-            users: fresh.users,
-            classrooms: fresh.classrooms,
-            testResults: fresh.testResults,
-            improvementPlans: fresh.improvementPlans,
-            customQuestions: fresh.customQuestions,
-            settings: fresh.settings,
-          };
+        try {
+          // أي إصدار أقل من 4، أو بيانات تالفة، نعيد بناءها بالكامل
+          if (version < 4 || !persistedState || typeof persistedState !== "object") {
+            const fresh = getInitialData();
+            return {
+              ...persistedState,
+              users: fresh.users,
+              classrooms: fresh.classrooms,
+              testResults: fresh.testResults,
+              improvementPlans: fresh.improvementPlans,
+              customQuestions: fresh.customQuestions,
+              settings: fresh.settings,
+            };
+          }
+          // تحقق من صحة البيانات الموجودة - يجب أن تحتوي على بيانات فعلية وليست فارغة
+          const requiredArrays = ["users", "classrooms", "testResults", "improvementPlans", "customQuestions"];
+          let needsRebuild = false;
+          for (const key of requiredArrays) {
+            if (!Array.isArray(persistedState[key])) {
+              needsRebuild = true;
+              break;
+            }
+          }
+          // إذا كانت users فارغة، أعد بناء البيانات التجريبية
+          if (Array.isArray(persistedState.users) && persistedState.users.length === 0) {
+            needsRebuild = true;
+          }
+          if (needsRebuild) {
+            const fresh = getInitialData();
+            return {
+              ...persistedState,
+              users: fresh.users,
+              classrooms: fresh.classrooms,
+              testResults: fresh.testResults,
+              improvementPlans: fresh.improvementPlans,
+              customQuestions: fresh.customQuestions,
+              settings: fresh.settings,
+            };
+          }
+          // تحقق من وجود settings
+          if (!persistedState.settings || typeof persistedState.settings !== "object") {
+            persistedState.settings = DEFAULT_SYSTEM_SETTINGS;
+          }
+          return persistedState;
+        } catch (e) {
+          // في حالة أي خطأ، أعد بناء البيانات بالكامل
+          console.warn("خطأ في ترحيل البيانات، إعادة بناء البيانات:", e);
+          return getInitialData();
         }
-        return persistedState;
+      },
+      // تخطي أخطاء hydration
+      skipHydration: false,
+      // التحقق النهائي بعد إعادة الترطيب - يضمن وجود البيانات
+      onRehydrateStorage: () => (state) => {
+        // إذا لم تكن البيانات موجودة بعد إعادة الترطيب، أعدها
+        if (state && (!state.users || state.users.length === 0)) {
+          const fresh = getInitialData();
+          state.users = fresh.users;
+          state.classrooms = fresh.classrooms;
+          state.testResults = fresh.testResults;
+          state.improvementPlans = fresh.improvementPlans;
+          state.customQuestions = fresh.customQuestions;
+          state.settings = fresh.settings;
+        }
       },
     }
   )

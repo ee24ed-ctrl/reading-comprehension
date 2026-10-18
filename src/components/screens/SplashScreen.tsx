@@ -8,12 +8,14 @@ export function SplashScreen({ type }: { type: "app" | "school" }) {
   const setScreen = useAppStore((s) => s.setScreen);
   const [phase, setPhase] = useState<"fade-in" | "show" | "fade-out">("fade-in");
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [videoFailed, setVideoFailed] = useState(false);
 
   // لأجل شاشة الفلاش الخاصة بالتطبيق: نعرض الفيديو بملء الشاشة
   // ولأجل شاشة المدرسة: نعرض شعار المدرسة كالمعتاد
   useEffect(() => {
     if (type === "app") {
       // شاشة الفيديو - تستمر حتى نهاية الفيديو أو 6 ثوانٍ كحد أقصى
+      // حتى لو فشل الفيديو، ننتقل تلقائياً بعد 6 ثوانٍ
       const timer1 = setTimeout(() => setPhase("show"), 100);
       const timer2 = setTimeout(() => setPhase("fade-out"), 5500);
       const timer3 = setTimeout(() => {
@@ -53,6 +55,15 @@ export function SplashScreen({ type }: { type: "app" | "school" }) {
     }, 400);
   };
 
+  // معالجة فشل تحميل الفيديو - الانتقال مباشرة لشاشة المدرسة
+  const handleVideoError = () => {
+    console.warn("فشل تحميل الفيديو، الانتقال لشاشة المدرسة");
+    setVideoFailed(true);
+    setTimeout(() => {
+      setScreen("splash_school");
+    }, 500);
+  };
+
   // ============ شاشة الفيديو (للتطبيق) ============
   if (type === "app") {
     return (
@@ -63,22 +74,24 @@ export function SplashScreen({ type }: { type: "app" | "school" }) {
           transition: "opacity 0.6s ease-out",
         }}
       >
-        {/* الفيديو يملأ الشاشة بالكامل */}
-        <video
-          ref={videoRef}
-          className="absolute inset-0 w-full h-full object-cover"
-          src="/app-intro.mp4"
-          autoPlay
-          muted
-          playsInline
-          //loop={false}
-          onEnded={handleVideoEnded}
-          // التحكم في حجم الفيديو للحفاظ على النسبة
-          style={{
-            opacity: phase === "fade-in" ? 0 : 1,
-            transition: "opacity 0.8s ease-out",
-          }}
-        />
+        {/* الفيديو يملأ الشاشة بالكامل - مع معالجة الأخطاء */}
+        {!videoFailed && (
+          <video
+            ref={videoRef}
+            className="absolute inset-0 w-full h-full object-cover"
+            src="/app-intro.mp4"
+            autoPlay
+            muted
+            playsInline
+            onEnded={handleVideoEnded}
+            onError={handleVideoError}
+            // التحكم في حجم الفيديو للحفاظ على النسبة
+            style={{
+              opacity: phase === "fade-in" ? 0 : 1,
+              transition: "opacity 0.8s ease-out",
+            }}
+          />
+        )}
 
         {/* تدرج خفيف في الأسفل لتحسين وضوح النص */}
         <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/70 via-black/20 to-transparent pointer-events-none" />

@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { DirectionProvider } from "@/components/providers/direction-provider";
+import { ErrorBoundary } from "@/components/providers/error-boundary";
 
 const cairo = Cairo({
   variable: "--font-cairo",
@@ -47,9 +48,11 @@ export default function RootLayout({
       <body
         className={`${cairo.variable} ${tajawal.variable} font-cairo antialiased bg-background text-foreground min-h-screen`}
       >
-        <DirectionProvider>
-          {children}
-        </DirectionProvider>
+        <ErrorBoundary>
+          <DirectionProvider>
+            {children}
+          </DirectionProvider>
+        </ErrorBoundary>
         <Toaster />
         <Sonner />
       </body>
