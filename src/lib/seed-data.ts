@@ -10,11 +10,20 @@ export const SEED_CLASSROOMS: Classroom[] = [
   { id: "c_g1_a", name: "الأول ابتدائي / أ", gradeKey: "g1", createdAt: "2025-09-01T00:00:00Z" },
   { id: "c_g1_b", name: "الأول ابتدائي / ب", gradeKey: "g1", createdAt: "2025-09-01T00:00:00Z" },
   { id: "c_g2_a", name: "الثاني ابتدائي / أ", gradeKey: "g2", createdAt: "2025-09-01T00:00:00Z" },
+  { id: "c_g2_b", name: "الثاني ابتدائي / ب", gradeKey: "g2", createdAt: "2025-09-01T00:00:00Z" },
   { id: "c_g3_a", name: "الثالث ابتدائي / أ", gradeKey: "g3", createdAt: "2025-09-01T00:00:00Z" },
+  { id: "c_g3_b", name: "الثالث ابتدائي / ب", gradeKey: "g3", createdAt: "2025-09-01T00:00:00Z" },
+  { id: "c_g3_c", name: "الثالث ابتدائي / ج", gradeKey: "g3", createdAt: "2025-09-01T00:00:00Z" },
   // الصفوف العليا
   { id: "c_g4_a", name: "الرابع ابتدائي / أ", gradeKey: "g4", createdAt: "2025-09-01T00:00:00Z" },
+  { id: "c_g4_b", name: "الرابع ابتدائي / ب", gradeKey: "g4", createdAt: "2025-09-01T00:00:00Z" },
+  { id: "c_g4_c", name: "الرابع ابتدائي / ج", gradeKey: "g4", createdAt: "2025-09-01T00:00:00Z" },
   { id: "c_g5_a", name: "الخامس ابتدائي / أ", gradeKey: "g5", createdAt: "2025-09-01T00:00:00Z" },
+  { id: "c_g5_b", name: "الخامس ابتدائي / ب", gradeKey: "g5", createdAt: "2025-09-01T00:00:00Z" },
+  { id: "c_g5_c", name: "الخامس ابتدائي / ج", gradeKey: "g5", createdAt: "2025-09-01T00:00:00Z" },
   { id: "c_g6_a", name: "السادس ابتدائي / أ", gradeKey: "g6", createdAt: "2025-09-01T00:00:00Z" },
+  { id: "c_g6_b", name: "السادس ابتدائي / ب", gradeKey: "g6", createdAt: "2025-09-01T00:00:00Z" },
+  { id: "c_g6_c", name: "السادس ابتدائي / ج", gradeKey: "g6", createdAt: "2025-09-01T00:00:00Z" },
   // المتوسط
   { id: "c_m1_a", name: "الأول متوسط / أ", gradeKey: "m1", createdAt: "2025-09-01T00:00:00Z" },
   { id: "c_m2_a", name: "الثاني متوسط / أ", gradeKey: "m2", createdAt: "2025-09-01T00:00:00Z" },
@@ -28,51 +37,109 @@ export const SEED_CLASSROOMS: Classroom[] = [
 // ألوان للصور الرمزية
 const AVATAR_COLORS = ["#0EA5E9", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899", "#14B8A6", "#F97316"];
 
-// معلمون تجريبيون
+// معلمون تجريبيون - حسب توزيع إدارة المدرسة
 export const SEED_TEACHERS: User[] = [
   {
     id: "t_1",
     role: "teacher",
-    name: "أ. عبدالله القحطاني",
+    name: "أ. إسلام السعيد",
     email: "teacher1@saahil.edu",
     passwordHash: "demo123",
     createdAt: "2025-08-20T00:00:00Z",
     approved: true,
-    classroomIds: ["c_g1_a", "c_g1_b", "c_g2_a"],
+    classroomIds: ["c_g1_a"], // الصف الأول / أ
     avatarColor: "#0EA5E9",
   },
   {
     id: "t_2",
     role: "teacher",
-    name: "أ. خالد الشهري",
+    name: "أ. أحمد السيد",
     email: "teacher2@saahil.edu",
     passwordHash: "demo123",
     createdAt: "2025-08-20T00:00:00Z",
     approved: true,
-    classroomIds: ["c_g4_a", "c_g5_a"],
+    classroomIds: ["c_g1_b"], // الصف الأول / ب
     avatarColor: "#10B981",
   },
   {
     id: "t_3",
     role: "teacher",
-    name: "أ. سعد العتيبي",
+    name: "أ. أحمد فهمي",
     email: "teacher3@saahil.edu",
     passwordHash: "demo123",
     createdAt: "2025-08-20T00:00:00Z",
     approved: true,
-    classroomIds: ["c_m1_a", "c_m2_a", "c_m3_a"],
+    classroomIds: ["c_g2_a"], // الصف الثاني / أ
     avatarColor: "#F59E0B",
   },
   {
     id: "t_4",
     role: "teacher",
-    name: "أ. فهد الدوسري",
+    name: "أ. محمود عوني",
     email: "teacher4@saahil.edu",
     passwordHash: "demo123",
-    createdAt: "2025-08-25T00:00:00Z",
-    approved: false, // بانتظار اعتماد الأدمن
-    classroomIds: ["c_s1_a"],
+    createdAt: "2025-08-20T00:00:00Z",
+    approved: true,
+    classroomIds: ["c_g2_b"], // الصف الثاني / ب
     avatarColor: "#8B5CF6",
+  },
+  {
+    id: "t_5",
+    role: "teacher",
+    name: "أ. ناصر عبدالرحمن أحمد",
+    email: "teacher5@saahil.edu",
+    passwordHash: "demo123",
+    createdAt: "2025-08-20T00:00:00Z",
+    approved: true,
+    classroomIds: ["c_g3_a"], // الصف الثالث / أ
+    avatarColor: "#EC4899",
+  },
+  {
+    id: "t_6",
+    role: "teacher",
+    name: "أ. محمد المصيلحي",
+    email: "teacher6@saahil.edu",
+    passwordHash: "demo123",
+    createdAt: "2025-08-20T00:00:00Z",
+    approved: true,
+    classroomIds: ["c_g3_b"], // الصف الثالث / ب
+    avatarColor: "#14B8A6",
+  },
+  {
+    id: "t_7",
+    role: "teacher",
+    name: "أ. أحمد إسماعيل",
+    email: "teacher7@saahil.edu",
+    passwordHash: "demo123",
+    createdAt: "2025-08-20T00:00:00Z",
+    approved: true,
+    classroomIds: ["c_g3_c"], // الصف الثالث / ج
+    avatarColor: "#F97316",
+  },
+  {
+    id: "t_8",
+    role: "teacher",
+    name: "أ. محمد لطفي",
+    email: "teacher8@saahil.edu",
+    passwordHash: "demo123",
+    createdAt: "2025-08-20T00:00:00Z",
+    approved: true,
+    classroomIds: ["c_g4_a", "c_g4_b", "c_g4_c"], // الصف الرابع (أ، ب، ج)
+    avatarColor: "#0EA5E9",
+  },
+  {
+    id: "t_9",
+    role: "teacher",
+    name: "أ. أحمد عبدالله",
+    email: "teacher9@saahil.edu",
+    passwordHash: "demo123",
+    createdAt: "2025-08-20T00:00:00Z",
+    approved: true,
+    classroomIds: [
+      "c_g5_a", "c_g5_b", "c_g5_c", // الصف الخامس (أ، ب، ج)
+      "c_g6_a", "c_g6_b", "c_g6_c",  // الصف السادس (أ، ب، ج)
+    ],
+    avatarColor: "#10B981",
   },
 ];
 
@@ -102,16 +169,29 @@ const STUDENT_NAMES = [
 function generateSeedStudents(): User[] {
   const students: User[] = [];
   const classroomsPerGrade = [
+    // الصفوف الأولية
     { classroomId: "c_g1_a", gradeKey: "g1" as const, count: 8 },
     { classroomId: "c_g1_b", gradeKey: "g1" as const, count: 7 },
     { classroomId: "c_g2_a", gradeKey: "g2" as const, count: 8 },
-    { classroomId: "c_g3_a", gradeKey: "g3" as const, count: 8 },
-    { classroomId: "c_g4_a", gradeKey: "g4" as const, count: 8 },
+    { classroomId: "c_g2_b", gradeKey: "g2" as const, count: 7 },
+    { classroomId: "c_g3_a", gradeKey: "g3" as const, count: 7 },
+    { classroomId: "c_g3_b", gradeKey: "g3" as const, count: 7 },
+    { classroomId: "c_g3_c", gradeKey: "g3" as const, count: 7 },
+    // الصفوف العليا
+    { classroomId: "c_g4_a", gradeKey: "g4" as const, count: 7 },
+    { classroomId: "c_g4_b", gradeKey: "g4" as const, count: 7 },
+    { classroomId: "c_g4_c", gradeKey: "g4" as const, count: 7 },
     { classroomId: "c_g5_a", gradeKey: "g5" as const, count: 7 },
-    { classroomId: "c_g6_a", gradeKey: "g6" as const, count: 8 },
+    { classroomId: "c_g5_b", gradeKey: "g5" as const, count: 7 },
+    { classroomId: "c_g5_c", gradeKey: "g5" as const, count: 7 },
+    { classroomId: "c_g6_a", gradeKey: "g6" as const, count: 7 },
+    { classroomId: "c_g6_b", gradeKey: "g6" as const, count: 7 },
+    { classroomId: "c_g6_c", gradeKey: "g6" as const, count: 7 },
+    // المتوسط
     { classroomId: "c_m1_a", gradeKey: "m1" as const, count: 8 },
     { classroomId: "c_m2_a", gradeKey: "m2" as const, count: 8 },
     { classroomId: "c_m3_a", gradeKey: "m3" as const, count: 7 },
+    // الثانوي
     { classroomId: "c_s1_a", gradeKey: "s1" as const, count: 8 },
     { classroomId: "c_s2_a", gradeKey: "s2" as const, count: 7 },
     { classroomId: "c_s3_a", gradeKey: "s3" as const, count: 7 },

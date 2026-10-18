@@ -428,6 +428,7 @@ export const useAppStore = create<AppState>()(
     },
     {
       name: "saahil-reading-platform",
+      version: 2, // رفع الإصدار لإجبار إعادة التحميل عند تغيّر البيانات التجريبية
       // تجنّب تخزين currentUser و currentTest و currentScreen للحفاظ على بداية نظيفة
       partialize: (state) => ({
         users: state.users,
@@ -437,6 +438,23 @@ export const useAppStore = create<AppState>()(
         customQuestions: state.customQuestions,
         settings: state.settings,
       }),
+      // عند تغيّر الإصدار، أعد بناء البيانات من المصدر
+      migrate: (persistedState: any, version: number) => {
+        if (version < 2) {
+          // إعادة بناء البيانات التجريبية بالكامل عند الانتقال للإصدار 2
+          const fresh = getInitialData();
+          return {
+            ...persistedState,
+            users: fresh.users,
+            classrooms: fresh.classrooms,
+            testResults: fresh.testResults,
+            improvementPlans: fresh.improvementPlans,
+            customQuestions: fresh.customQuestions,
+            settings: fresh.settings,
+          };
+        }
+        return persistedState;
+      },
     }
   )
 );
