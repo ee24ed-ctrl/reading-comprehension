@@ -156,7 +156,7 @@ export function HomeScreen() {
 
       {/* التذييل */}
       <footer className="mt-3 py-3 px-6 text-center text-xs md:text-sm text-muted-foreground border-t border-border/40">
-        <p>© 2025 مدرسة الساحل الأهلية (بنين) — منصة الفهم القرائي</p>
+        <p>© {new Date().getFullYear()} مدرسة الساحل الأهلية (بنين) — منصة الفهم القرائي</p>
       </footer>
     </div>
   );

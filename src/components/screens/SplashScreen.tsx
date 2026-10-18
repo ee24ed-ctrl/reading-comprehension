@@ -213,8 +213,28 @@ export function SplashScreen({ type }: { type: "app" | "school" }) {
 
       {/* ملاحظة: يمكن استبدال الشعارين برفع ملف صورة */}
       <div className="absolute bottom-6 text-xs text-muted-foreground/60">
-        {type === "app" ? "منصة تعليمية تفاعلية" : "السنة الدراسية 1447هـ - 2025/2026م"}
+        {type === "app" ? "منصة تعليمية تفاعلية" : getAcademicYear()}
       </div>
     </div>
   );
+}
+
+// حساب السنة الدراسية تلقائياً (ميلادي وهجري)
+// السنة الدراسية تبدأ في سبتمبر (الشهر 9)
+function getAcademicYear(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1; // 0-indexed
+
+  // السنة الدراسية تبدأ من سبتمبر
+  // إذا كان الشهر >= 9 (سبتمبر-ديسمبر): السنة الدراسية = year/year+1
+  // وإلا (يناير-أغسطس): السنة الدراسية = year-1/year
+  const startYear = month >= 9 ? year : year - 1;
+  const endYear = startYear + 1;
+
+  // حساب السنة الهجرية تقريبياً (الفرق بين الميلادي والهجري ~578.97 سنة)
+  // نستخدم تحويل تقريبي دقيق بما يكفي للعرض
+  const hijriYear = Math.floor((startYear - 622) * 1.0307) + 1;
+
+  return `السنة الدراسية ${hijriYear}هـ - ${startYear}/${endYear}م`;
 }
