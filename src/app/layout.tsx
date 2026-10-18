@@ -3,6 +3,7 @@ import { Cairo, Tajawal } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
+import { DirectionProvider } from "@/components/providers/direction-provider";
 
 const cairo = Cairo({
   variable: "--font-cairo",
@@ -46,7 +47,9 @@ export default function RootLayout({
       <body
         className={`${cairo.variable} ${tajawal.variable} font-cairo antialiased bg-background text-foreground min-h-screen`}
       >
-        {children}
+        <DirectionProvider>
+          {children}
+        </DirectionProvider>
         <Toaster />
         <Sonner />
       </body>
