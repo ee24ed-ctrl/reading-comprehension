@@ -1,0 +1,51 @@
+import type { Metadata } from "next";
+import { Cairo, Tajawal } from "next/font/google";
+import "./globals.css";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+
+const cairo = Cairo({
+  variable: "--font-cairo",
+  subsets: ["arabic", "latin"],
+  display: "swap",
+});
+
+const tajawal = Tajawal({
+  variable: "--font-tajawal",
+  subsets: ["arabic", "latin"],
+  weight: ["400", "500", "700", "800"],
+  display: "swap",
+});
+
+export const metadata: Metadata = {
+  title: "منصة الفهم القرائي - مدرسة الساحل الأهلية (بنين)",
+  description:
+    "منصة تفاعلية لقياس وتنمية مهارات الفهم القرائي لدى طلاب مدرسة الساحل الأهلية (بنين) من الصف الأول الابتدائي حتى الثالث الثانوي.",
+  keywords: [
+    "الفهم القرائي",
+    "مدرسة الساحل الأهلية",
+    "السعودية",
+    "تعليم",
+    "اختبارات",
+    "تحسين القراءة",
+  ],
+  authors: [{ name: "مدرسة الساحل الأهلية (بنين)" }],
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="ar" dir="rtl" suppressHydrationWarning>
+      <body
+        className={`${cairo.variable} ${tajawal.variable} font-cairo antialiased bg-background text-foreground min-h-screen`}
+      >
+        {children}
+        <Toaster />
+        <Sonner />
+      </body>
+    </html>
+  );
+}
