@@ -327,8 +327,35 @@ export const useAppStore = create<AppState>()(
           const weakSkill = (Object.entries(skillScores) as [SkillKey, { correct: number; total: number }][])
             .sort(([, a], [, b]) => a.correct / Math.max(1, a.total) - b.correct / Math.max(1, b.total))[0][0];
 
-          const plan = generatePlanForStudent(user.id, classification, weakSkill);
-          set({ improvementPlans: [...get().improvementPlans, plan] });
+          const newPlan = generatePlanForStudent(user.id, classification, weakSkill);
+
+          // استبدال الخطة القديمة (إن وُجدت) بالخطة الجديدة
+          // هذا يضمن أن المعلم يرى آخر خطة بناءً على آخر اختبار
+          const existingPlanIndex = get().improvementPlans.findIndex(
+            (p) => p.studentId === user.id
+          );
+          if (existingPlanIndex >= 0) {
+            // حفظ ملاحظات المعلم من الخطة القديمة (إن وُجدت)
+            const oldPlan = get().improvementPlans[existingPlanIndex];
+            const preservedNotes = oldPlan.teacherNotes && oldPlan.status === "approved"
+              ? oldPlan.teacherNotes
+              : newPlan.teacherNotes;
+            const preservedStatus = oldPlan.status === "approved" ? "draft" : newPlan.status;
+
+            const updatedPlans = [...get().improvementPlans];
+            updatedPlans[existingPlanIndex] = {
+              ...newPlan,
+              id: oldPlan.id, // الإبقاء على نفس ID للخطة
+              teacherNotes: preservedNotes,
+              status: preservedStatus as any,
+              createdAt: oldPlan.createdAt, // الإبقاء على تاريخ الإنشاء الأصلي
+              updatedAt: new Date().toISOString(),
+            };
+            set({ improvementPlans: updatedPlans });
+          } else {
+            // لا توجد خطة قديمة - أضف الجديدة
+            set({ improvementPlans: [...get().improvementPlans, newPlan] });
+          }
 
           return result;
         },
@@ -428,7 +455,7 @@ export const useAppStore = create<AppState>()(
     },
     {
       name: "saahil-reading-platform",
-      version: 4, // رفع الإصدار لإجبار إعادة التحميل مع معالجة أخطاء Migration
+      version: 5, // رفع الإصدار لتحديث الخطط لتكون شاملة لكل المراحل
       // تجنّب تخزين currentUser و currentTest و currentScreen للحفاظ على بداية نظيفة
       partialize: (state) => ({
         users: state.users,
@@ -441,8 +468,8 @@ export const useAppStore = create<AppState>()(
       // ترحيل آمن: عند تغيّر الإصدار أو وجود بيانات تالفة، أعد بناء البيانات
       migrate: (persistedState: any, version: number) => {
         try {
-          // أي إصدار أقل من 4، أو بيانات تالفة، نعيد بناءها بالكامل
-          if (version < 4 || !persistedState || typeof persistedState !== "object") {
+          // أي إصدار أقل من 5، أو بيانات تالفة، نعيد بناءها بالكامل
+          if (version < 5 || !persistedState || typeof persistedState !== "object") {
             const fresh = getInitialData();
             return {
               ...persistedState,
@@ -521,30 +548,113 @@ function getStageFromGrade(grade: string): StageKey {
 }
 
 // مساعد: توليد خطة لطالب
+// تولّد خطة شاملة لمدة 4 أسابيع، كل أسبوع يحتوي على عدة مهام
+// تغطي جميع مهارات الفهم القرائي الخمس
 function generatePlanForStudent(studentId: string, classification: ClassificationLevel, weakSkill: SkillKey) {
-  const weeklySchedule = [1, 2, 3, 4].map((weekNumber) => {
-    const tasks = [
-      { title: "قراءة نص قصير", skill: weakSkill, minutes: classification === "support" ? 10 : 20 },
-      { title: "تمارين المفردات", skill: "vocabulary", minutes: 10 },
-      { title: "أسئلة الفكرة الرئيسية", skill: "main_idea", minutes: 15 },
-      { title: "تمارين الاستنتاج", skill: "inference", minutes: 15 },
-    ];
-    const task = tasks[weekNumber - 1] || tasks[0];
-    return {
-      id: `task_${Date.now()}_${weekNumber}`,
-      weekNumber,
-      title: task.title,
-      description:
-        classification === "support"
-          ? `${task.title} - تركيز على المهارة الأضعف. نص قصير مع تغذية راجعة فورية.`
-          : classification === "medium"
-          ? `${task.title} - تدرج في الصعوبة مع تنوع النصوص.`
-          : `${task.title} - نص عميق وتحديات استنتاجية متقدمة.`,
-      skill: task.skill as any,
-      estimatedMinutes: task.minutes,
-      completed: false,
-    };
+  // المهارات الخمس الرئيسية
+  const ALL_SKILLS: SkillKey[] = ["main_idea", "inference", "vocabulary", "details", "sequencing"];
+
+  // تكوين الجدول الأسبوعي - 4 أسابيع، كل أسبوع فيه 5 مهام (مهمة لكل مهارة)
+  const weeklySchedule = [1, 2, 3, 4].flatMap((weekNumber) => {
+    return ALL_SKILLS.map((skill) => {
+      // تركيز على المهارة الأضعف بمزيد من الوقت
+      const isWeakSkill = skill === weakSkill;
+      const isStrongSkill = skill !== weakSkill;
+
+      // وقت المهمة حسب الأهمية والمرحلة
+      let minutes = 10;
+      if (isWeakSkill) minutes = classification === "support" ? 20 : 15;
+      else if (classification === "excellent") minutes = 15;
+      else minutes = 10;
+
+      // عنوان المهمة حسب المهارة والأسبوع
+      const skillTasks: Record<SkillKey, { title: string; desc: string }> = {
+        main_idea: {
+          title: "استخراج الفكرة الرئيسية",
+          desc: "اقرأ النص ثم حدّد الفكرة المحورية التي يدور حولها النص",
+        },
+        inference: {
+          title: "تمارين الاستنتاج",
+          desc: "استنتج الإجابات من سياق النص دون ذكرها صراحة",
+        },
+        vocabulary: {
+          title: "تمارين المفردات",
+          desc: "استخرج معاني المفردات من السياق",
+        },
+        details: {
+          title: "استخراج التفاصيل",
+          desc: "تعرّف على التفاصيل الدقيقة في النص",
+        },
+        sequencing: {
+          title: "ترتيب الأحداث",
+          desc: "رتب الأحداث حسب ورودها في النص",
+        },
+      };
+
+      const taskInfo = skillTasks[skill];
+
+      // وصف المهمة حسب التصنيف
+      let description = "";
+      if (classification === "support") {
+        // للمستوى الذي يحتاج دعم: تركيز على المهارة الأضعف
+        if (isWeakSkill) {
+          description = `الأسبوع ${weekNumber}: ${taskInfo.title} - 🔴 مهم جداً (مهارتك الأضعف). ${taskInfo.desc}. ابدأ بنص قصير ومبسّط، مع تغذية راجعة فورية بعد كل سؤال. كرّر التمرين حتى تتقنه.`;
+        } else {
+          description = `الأسبوع ${weekNumber}: ${taskInfo.title} - ${taskInfo.desc}. تدريب أساسي بمستوى مناسب.`;
+        }
+      } else if (classification === "medium") {
+        // للمستوى المتوسط: تدرّج في الصعوبة
+        if (isWeakSkill) {
+          description = `الأسبوع ${weekNumber}: ${taskInfo.title} - ⚠️ مهارة تحتاج تعزيز. ${taskInfo.desc}. تدريبات متدرّجة الصعوبة، ابدأ من المستوى الأساسي وانتقل تدريجياً للمتوسط.`;
+        } else {
+          description = `الأسبوع ${weekNumber}: ${taskInfo.title} - ${taskInfo.desc}. تدريبات متنوعة على نصوص أدبية ومعلوماتية.`;
+        }
+      } else {
+        // للمستوى المتفوق: تحديات وعمق
+        if (isWeakSkill) {
+          description = `الأسبوع ${weekNumber}: ${taskInfo.title} - 💪 تحدٍّ إضافي. ${taskInfo.desc}. نصوص أعمق وأسئلة استنتاجية متقدمة لتحقيق التميّز.`;
+        } else {
+          description = `الأسبوع ${weekNumber}: ${taskInfo.title} - ${taskInfo.desc}. نصوص معلوماتية وأدبية متنوعة مع أسئلة تحليلية.`;
+        }
+      }
+
+      return {
+        id: `task_${Date.now()}_${weekNumber}_${skill}`,
+        weekNumber,
+        title: `${taskInfo.title}${isWeakSkill ? " (تركيز)" : ""}`,
+        description,
+        skill: skill as any,
+        estimatedMinutes: minutes,
+        completed: false,
+      };
+    });
   });
+
+  // ملاحظات المعلم حسب المستوى
+  const teacherNotesByClassification: Record<ClassificationLevel, string> = {
+    support:
+      "📌 خطة مركّزة للمستوى الذي يحتاج دعماً:\n" +
+      "• تركيز يومي على المهارة الأضعف (مظللة بالأحمر)\n" +
+      "• نصوص قصيرة ومبسّطة مناسبة للمستوى\n" +
+      "• تغذية راجعة فورية بعد كل سؤال\n" +
+      "• إعادة تقييم بعد 4 أسابيع لقياس التقدّم\n" +
+      "• يُنصح بالتواصل مع ولي الأمر لمتابعة التقدّم في المنزل",
+    medium:
+      "📌 خطة متوازنة للمستوى المتوسط:\n" +
+      "• تدريبات متنوعة على جميع المهارات الخمس\n" +
+      "• تدرّج في الصعوبة من السهل إلى المتوسط\n" +
+      "• نصوص أدبية ومعلوماتية متنوعة\n" +
+      "• تركيز إضافي على المهارة الأضعف (مظللة بالأصفر)\n" +
+      "• إعادة تقييم بعد 4 أسابيع للانتقال لمستوى متفوّق",
+    excellent:
+      "📌 خطة متقدمة للمستوى المتفوق:\n" +
+      "• نصوص أعمق وأطول من المستوى العادي\n" +
+      "• أسئلة استنتاجية وتحليلية متقدمة\n" +
+      "• تحديات لغوية وبلاغية\n" +
+      "• تشجيع الإبداع في التعبير\n" +
+      "• إعداد للقدرات اللفظية للمرحلة الجامعية\n" +
+      "• تحديات إضافية على المهارات (مظللة بالبنفسجي)",
+  };
 
   return {
     id: `plan_${studentId}_${Date.now()}`,
@@ -554,12 +664,7 @@ function generatePlanForStudent(studentId: string, classification: Classificatio
     status: "draft" as const,
     classification,
     weeklySchedule,
-    teacherNotes:
-      classification === "support"
-        ? "خطة مركّزة على المهارة الأضعف. نصوص قصيرة وتدريبات يومية مع تغذية راجعة فورية."
-        : classification === "medium"
-        ? "تدريبات متنوعة ومتدرجة الصعوبة."
-        : "نصوص أعمق وأسئلة استنتاجية وتحديات.",
+    teacherNotes: teacherNotesByClassification[classification],
     nextAssessmentDate: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000).toISOString(),
   };
 }

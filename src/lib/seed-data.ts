@@ -272,16 +272,41 @@ export function generateSeedTestResults(students: User[]): PlacementTestResult[]
 
 type SkillKeyArr = ("main_idea" | "inference" | "vocabulary" | "details" | "sequencing")[];
 
-// توليد خطط تحسين تجريبية
+// توليد خطط تحسين تجريبية شاملة (4 أسابيع × 5 مهارات = 20 مهمة لكل طالب)
 export function generateSeedPlans(students: User[], results: PlacementTestResult[]): ImprovementPlan[] {
   const plans: ImprovementPlan[] = [];
   students.forEach((student) => {
     const result = results.find((r) => r.studentId === student.id);
     if (!result) return;
     const classification = result.classification;
-    const weakSkill = findWeakestSkill(result.skillScores);
+    const weakSkill = findWeakestSkill(result.skillScores) as any;
 
     const weeklySchedule = generateWeeklyTasks(classification, weakSkill);
+
+    // ملاحظات المعلم حسب المستوى
+    const teacherNotesByClassification: Record<string, string> = {
+      support:
+        "📌 خطة مركّزة للمستوى الذي يحتاج دعماً:\n" +
+        "• تركيز يومي على المهارة الأضعف\n" +
+        "• نصوص قصيرة ومبسّطة مناسبة للمستوى\n" +
+        "• تغذية راجعة فورية بعد كل سؤال\n" +
+        "• إعادة تقييم بعد 4 أسابيع لقياس التقدّم\n" +
+        "• يُنصح بالتواصل مع ولي الأمر لمتابعة التقدّم في المنزل",
+      medium:
+        "📌 خطة متوازنة للمستوى المتوسط:\n" +
+        "• تدريبات متنوعة على جميع المهارات الخمس\n" +
+        "• تدرّج في الصعوبة من السهل إلى المتوسط\n" +
+        "• نصوص أدبية ومعلوماتية متنوعة\n" +
+        "• تركيز إضافي على المهارة الأضعف\n" +
+        "• إعادة تقييم بعد 4 أسابيع للانتقال لمستوى متفوّق",
+      excellent:
+        "📌 خطة متقدمة للمستوى المتفوق:\n" +
+        "• نصوص أعمق وأطول من المستوى العادي\n" +
+        "• أسئلة استنتاجية وتحليلية متقدمة\n" +
+        "• تحديات لغوية وبلاغية\n" +
+        "• تشجيع الإبداع في التعبير\n" +
+        "• إعداد للقدرات اللفظية للمرحلة الجامعية",
+    };
 
     plans.push({
       id: `plan_${student.id}`,
@@ -291,12 +316,7 @@ export function generateSeedPlans(students: User[], results: PlacementTestResult
       status: classification === "support" ? "in_progress" : "approved",
       classification,
       weeklySchedule,
-      teacherNotes:
-        classification === "support"
-          ? "الطالب يحتاج إلى دعم إضافي في المهارة الأضعف، يرجى متابعة التزامِه يومياً."
-          : classification === "medium"
-          ? "خطة متوازنة لتطوير المهارات الأساسية والاستعداد للمرحلة التالية."
-          : "خطة متقدمة لإثراء قدرات الطالب وتوسيع مداركه.",
+      teacherNotes: teacherNotesByClassification[classification],
       nextAssessmentDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     });
   });
@@ -316,30 +336,80 @@ function findWeakestSkill(skills: PlacementTestResult["skillScores"]): keyof Pla
   return weakest;
 }
 
+// توليد جدول أسبوعي شامل: 4 أسابيع × 5 مهارات = 20 مهمة
 function generateWeeklyTasks(classification: string, weakSkill: string) {
-  const baseTasks = [
-    { title: "قراءة نص قصير", skill: weakSkill, minutes: 15 },
-    { title: "تمارين المفردات", skill: "vocabulary", minutes: 10 },
-    { title: "أسئلة الفكرة الرئيسية", skill: "main_idea", minutes: 15 },
-    { title: "تمارين الاستنتاج", skill: "inference", minutes: 15 },
-    { title: "ترتيب الأحداث", skill: "sequencing", minutes: 10 },
-  ];
-  return [1, 2, 3, 4].map((weekNumber) => {
-    const task = baseTasks[weekNumber - 1] || baseTasks[0];
-    return {
-      id: `task_${weekNumber}_${Math.random().toString(36).substr(2, 9)}`,
-      weekNumber,
-      title: task.title,
-      description:
-        classification === "support"
-          ? `${task.title} - تركيز على المهارة الأضعف (${weakSkill}). نص قصير ومناسب لمستوى الطالب.`
-          : classification === "medium"
-          ? `${task.title} - تدرج في الصعوبة مع تنوع النصوص.`
-          : `${task.title} - نص عميق وتحديات استنتاجية متقدمة.`,
-      skill: task.skill as ImprovementPlan["weeklySchedule"][0]["skill"],
-      estimatedMinutes: task.minutes,
-      completed: weekNumber < 3 ? Math.random() > 0.4 : false,
-    };
+  const ALL_SKILLS: SkillKey[] = ["main_idea", "inference", "vocabulary", "details", "sequencing"];
+
+  const skillTasks: Record<SkillKey, { title: string; desc: string }> = {
+    main_idea: {
+      title: "استخراج الفكرة الرئيسية",
+      desc: "اقرأ النص ثم حدّد الفكرة المحورية التي يدور حولها النص",
+    },
+    inference: {
+      title: "تمارين الاستنتاج",
+      desc: "استنتج الإجابات من سياق النص دون ذكرها صراحة",
+    },
+    vocabulary: {
+      title: "تمارين المفردات",
+      desc: "استخرج معاني المفردات من السياق",
+    },
+    details: {
+      title: "استخراج التفاصيل",
+      desc: "تعرّف على التفاصيل الدقيقة في النص",
+    },
+    sequencing: {
+      title: "ترتيب الأحداث",
+      desc: "رتب الأحداث حسب ورودها في النص",
+    },
+  };
+
+  return [1, 2, 3, 4].flatMap((weekNumber) => {
+    return ALL_SKILLS.map((skill) => {
+      const isWeakSkill = skill === weakSkill;
+
+      // وقت المهمة حسب الأهمية والتصنيف
+      let minutes = 10;
+      if (isWeakSkill) minutes = classification === "support" ? 20 : 15;
+      else if (classification === "excellent") minutes = 15;
+      else minutes = 10;
+
+      const taskInfo = skillTasks[skill];
+
+      // وصف المهمة حسب التصنيف
+      let description = "";
+      if (classification === "support") {
+        if (isWeakSkill) {
+          description = `الأسبوع ${weekNumber}: ${taskInfo.title} - 🔴 مهم جداً (مهارتك الأضعف). ${taskInfo.desc}. ابدأ بنص قصير ومبسّط، مع تغذية راجعة فورية بعد كل سؤال.`;
+        } else {
+          description = `الأسبوع ${weekNumber}: ${taskInfo.title} - ${taskInfo.desc}. تدريب أساسي بمستوى مناسب.`;
+        }
+      } else if (classification === "medium") {
+        if (isWeakSkill) {
+          description = `الأسبوع ${weekNumber}: ${taskInfo.title} - ⚠️ مهارة تحتاج تعزيز. ${taskInfo.desc}. تدريبات متدرّجة الصعوبة.`;
+        } else {
+          description = `الأسبوع ${weekNumber}: ${taskInfo.title} - ${taskInfo.desc}. تدريبات متنوعة على نصوص أدبية ومعلوماتية.`;
+        }
+      } else {
+        if (isWeakSkill) {
+          description = `الأسبوع ${weekNumber}: ${taskInfo.title} - 💪 تحدٍّ إضافي. ${taskInfo.desc}. نصوص أعمق وأسئلة استنتاجية متقدمة.`;
+        } else {
+          description = `الأسبوع ${weekNumber}: ${taskInfo.title} - ${taskInfo.desc}. نصوص معلوماتية وأدبية متنوعة مع أسئلة تحليلية.`;
+        }
+      }
+
+      // إكمال عشوائي لبعض المهام (للأسابيع الماضية)
+      const completed = weekNumber < 3 ? Math.random() > 0.4 : false;
+
+      return {
+        id: `task_${weekNumber}_${skill}_${Math.random().toString(36).substr(2, 9)}`,
+        weekNumber,
+        title: `${taskInfo.title}${isWeakSkill ? " (تركيز)" : ""}`,
+        description,
+        skill: skill as any,
+        estimatedMinutes: minutes,
+        completed,
+      };
+    });
   });
 }
 

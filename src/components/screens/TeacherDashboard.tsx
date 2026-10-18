@@ -45,6 +45,7 @@ import {
 import {
   CLASSIFICATION_INFO,
   SKILL_LABELS,
+  SKILL_ICONS,
   QUESTION_TYPE_LABELS,
   STAGES,
   GRADES,
@@ -826,8 +827,43 @@ function StudentDetailDialog({ studentId, onClose }: { studentId: string | null;
                 <Badge variant="outline" className="text-xs mb-3">
                   {plan.status === "approved" ? "معتمدة" : plan.status === "in_progress" ? "قيد التنفيذ" : "مسودة"}
                 </Badge>
-                <div className="text-xs leading-relaxed bg-muted/30 p-3 rounded">
+                <div className="text-xs leading-relaxed bg-muted/30 p-3 rounded whitespace-pre-line">
                   {plan.teacherNotes}
+                </div>
+
+                {/* عرض المهام الأسبوعية */}
+                <div className="mt-4">
+                  <div className="text-xs font-medium mb-2 text-muted-foreground">
+                    جدول المهام ({plan.weeklySchedule.length} مهمة):
+                  </div>
+                  <div className="max-h-60 overflow-y-auto custom-scroll space-y-2 pr-1">
+                    {plan.weeklySchedule.map((task: any) => {
+                      const isFocusTask = task.title?.includes("(تركيز)");
+                      return (
+                        <div
+                          key={task.id}
+                          className={`p-2 rounded border text-xs ${
+                            task.completed
+                              ? "border-emerald-200 bg-emerald-50/40"
+                              : isFocusTask
+                              ? "border-amber-200 bg-amber-50/40"
+                              : "border-border bg-card"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <span className="font-medium">
+                              {task.completed && "✅ "}
+                              {task.title}
+                            </span>
+                            <Badge variant="outline" className="text-xs">
+                              أسبوع {task.weekNumber}
+                            </Badge>
+                          </div>
+                          <p className="text-muted-foreground leading-relaxed">{task.description}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </CardContent>
             </Card>

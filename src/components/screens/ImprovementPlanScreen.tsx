@@ -157,48 +157,78 @@ export function ImprovementPlanScreen() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {plan.weeklySchedule.map((task) => {
-              const skillInfo = SKILL_LABELS[task.skill];
-              const skillIcon = SKILL_ICONS[task.skill];
+            {/* تجميع المهام حسب الأسبوع */}
+            {[1, 2, 3, 4].map((weekNum) => {
+              const weekTasks = plan.weeklySchedule.filter((t) => t.weekNumber === weekNum);
+              if (weekTasks.length === 0) return null;
+              const weekCompleted = weekTasks.filter((t) => t.completed).length;
               return (
-                <div
-                  key={task.id}
-                  className={`rounded-xl border-2 p-4 transition-all ${
-                    task.completed
-                      ? "border-emerald-200 bg-emerald-50/50"
-                      : "border-border bg-card hover:border-primary/30"
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 mt-0.5">
-                      {task.completed ? (
-                        <CheckCircle2 className="w-6 h-6 text-emerald-600" />
-                      ) : (
-                        <Circle className="w-6 h-6 text-muted-foreground" />
-                      )}
+                <div key={weekNum} className="border-2 border-border/60 rounded-xl overflow-hidden">
+                  {/* عنوان الأسبوع */}
+                  <div className="bg-muted/40 px-4 py-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="default" className="text-xs">الأسبوع {weekNum}</Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {weekCompleted}/{weekTasks.length} مكتملة
+                      </span>
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between gap-2 mb-1">
-                        <div>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <Badge variant="outline" className="text-xs">
-                              الأسبوع {task.weekNumber}
-                            </Badge>
-                            <Badge variant="secondary" className="text-xs">
-                              {skillIcon} {skillInfo}
-                            </Badge>
-                            <Badge variant="outline" className="text-xs">
-                              <Clock className="w-3 h-3 ml-1" />
-                              {task.estimatedMinutes} دقيقة
-                            </Badge>
+                    <Progress
+                      value={(weekCompleted / weekTasks.length) * 100}
+                      className="h-1.5 w-32"
+                    />
+                  </div>
+                  {/* قائمة مهام الأسبوع */}
+                  <div className="divide-y divide-border/50">
+                    {weekTasks.map((task) => {
+                      const skillInfo = SKILL_LABELS[task.skill];
+                      const skillIcon = SKILL_ICONS[task.skill];
+                      // هل هذه المهمة تركّز على المهارة الأضعف؟
+                      const isFocusTask = task.title.includes("(تركيز)");
+                      return (
+                        <div
+                          key={task.id}
+                          className={`p-3 transition-all ${
+                            task.completed
+                              ? "bg-emerald-50/30"
+                              : isFocusTask
+                              ? "bg-amber-50/30 hover:bg-amber-50/60"
+                              : "hover:bg-muted/30"
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="flex-shrink-0 mt-0.5">
+                              {task.completed ? (
+                                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                              ) : isFocusTask ? (
+                                <Circle className="w-5 h-5 text-amber-500 fill-amber-100" />
+                              ) : (
+                                <Circle className="w-5 h-5 text-muted-foreground/40" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap mb-1">
+                                <Badge variant="secondary" className="text-xs">
+                                  {skillIcon} {skillInfo}
+                                </Badge>
+                                <Badge variant="outline" className="text-xs">
+                                  <Clock className="w-3 h-3 ml-1" />
+                                  {task.estimatedMinutes} دقيقة
+                                </Badge>
+                                {isFocusTask && (
+                                  <Badge className="text-xs bg-amber-500 hover:bg-amber-500">
+                                    ⚡ تركيز
+                                  </Badge>
+                                )}
+                              </div>
+                              <h4 className={`font-bold text-sm ${task.completed ? "line-through opacity-60" : ""}`}>
+                                {task.title}
+                              </h4>
+                              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{task.description}</p>
+                            </div>
                           </div>
-                          <h4 className={`font-bold mt-2 ${task.completed ? "line-through opacity-70" : ""}`}>
-                            {task.title}
-                          </h4>
-                          <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
                         </div>
-                      </div>
-                    </div>
+                      );
+                    })}
                   </div>
                 </div>
               );
