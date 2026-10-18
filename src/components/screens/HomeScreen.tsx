@@ -62,21 +62,21 @@ export function HomeScreen() {
       </header>
 
       {/* المحتوى الرئيسي */}
-      <main className="flex-1 flex flex-col justify-center px-6 pb-8">
+      <main className="flex flex-col px-6 pb-2">
         <div className="w-full max-w-5xl mx-auto">
           {/* بطاقة الترحيب */}
-          <div className="text-center mb-8 md:mb-10">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/5 border border-primary/10 mb-4">
+          <div className="text-center mb-6 md:mb-8">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/5 border border-primary/10 mb-3">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-sm text-primary font-medium">مدرسة الساحل الأهلية (بنين)</span>
             </div>
-            <h2 className="text-2xl md:text-4xl font-bold text-foreground mb-3 leading-tight">
+            <h2 className="text-2xl md:text-4xl font-bold text-foreground mb-2 leading-tight">
               أهلاً بك في رحلة
               <span className="block text-gradient bg-gradient-primary bg-clip-text text-transparent mt-1">
                 الفهم القرائي
               </span>
             </h2>
-            <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            <p className="text-sm md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
               منصة تعليمية لقياس وتنمية مهارات الفهم القرائي لدى طلابنا من الصف الأول الابتدائي حتى الثالث الثانوي،
               مع متابعة دقيقة من المعلمين والإدارة.
             </p>
@@ -120,7 +120,7 @@ export function HomeScreen() {
           </div>
 
           {/* روابط إضافية */}
-          <div className="mt-6 flex flex-col md:flex-row items-center justify-center gap-3">
+          <div className="mt-4 flex flex-col md:flex-row items-center justify-center gap-3">
             <p className="text-sm text-muted-foreground">ليس لديك حساب؟</p>
             <Button
               variant="outline"
@@ -134,7 +134,7 @@ export function HomeScreen() {
 
           {/* رابط دخول الأدمن - يظهر بعد الضغط على الشعار */}
           {showAdminLink && (
-            <div className="mt-4 text-center animate-slide-up">
+            <div className="mt-3 text-center animate-slide-up">
               <button
                 onClick={() => setScreen("auth_login")}
                 className="inline-flex items-center gap-2 px-4 py-2 text-sm text-foreground/60 hover:text-foreground border border-dashed border-muted-foreground/30 rounded-lg hover:border-foreground/30 transition-all"
@@ -146,7 +146,7 @@ export function HomeScreen() {
           )}
 
           {/* إحصائيات سريعة */}
-          <div className="mt-6 md:mt-8 grid grid-cols-3 gap-3 md:gap-4 max-w-2xl mx-auto">
+          <div className="mt-4 md:mt-6 grid grid-cols-3 gap-3 md:gap-4 max-w-2xl mx-auto">
             <StatCard number="12" label="صف دراسي" />
             <StatCard number="128+" label="سؤالاً تفاعلياً" />
             <StatCard number="4" label="مراحل دراسية" />
@@ -155,7 +155,7 @@ export function HomeScreen() {
       </main>
 
       {/* التذييل */}
-      <footer className="mt-auto py-4 px-6 text-center text-xs md:text-sm text-muted-foreground border-t border-border/40">
+      <footer className="mt-3 py-3 px-6 text-center text-xs md:text-sm text-muted-foreground border-t border-border/40">
         <p>© 2025 مدرسة الساحل الأهلية (بنين) — منصة الفهم القرائي</p>
       </footer>
     </div>
