@@ -3,7 +3,7 @@
 import { useAppStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { GraduationCap, BookOpen, ShieldCheck, ArrowLeft, Sparkles } from "lucide-react";
+import { GraduationCap, BookOpen, ShieldCheck, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { DEFAULT_SETTINGS } from "@/lib/stages";
 
@@ -33,29 +33,30 @@ export function HomeScreen() {
 
   return (
     <div className="min-h-screen bg-gradient-sea flex flex-col">
+      {/* الشعار في أعلى الصفحة - بحجم كبير بدون إطار */}
+      <div className="pt-8 pb-2 px-6 flex justify-center">
+        <button
+          onClick={() => setShowAdminLink(!showAdminLink)}
+          className="w-32 h-32 md:w-40 md:h-40 transition-transform hover:scale-105"
+          title="للإدارة"
+          aria-label="مدرسة الساحل الأهلية (بنين)"
+        >
+          <img
+            src="/school-logo.png"
+            alt="شعار مدرسة الساحل الأهلية (بنين)"
+            className="w-full h-full object-contain drop-shadow-md"
+          />
+        </button>
+      </div>
+
       {/* الرأس */}
-      <header className="px-6 py-8 md:py-12">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {/* شعار المدرسة الفعلي بدون إطار */}
-            <div className="w-14 h-14 md:w-16 md:h-16 flex items-center justify-center">
-              { }
-              <img
-                src="/school-logo.png"
-                alt="شعار مدرسة الساحل الأهلية (بنين)"
-                className="w-full h-full object-contain"
-              />
-            </div>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-primary leading-tight">
-                {DEFAULT_SETTINGS.appName}
-              </h1>
-              <p className="text-sm text-muted-foreground">منصة الفهم القرائي</p>
-            </div>
-          </div>
-          <div className="hidden md:flex items-center gap-2 text-sm text-muted-foreground">
-            <Sparkles className="w-4 h-4 text-accent" />
-            <span>منصة تعليمية متكاملة</span>
+      <header className="px-6 pt-2 pb-6 md:pb-10">
+        <div className="max-w-6xl mx-auto text-center">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold text-primary leading-tight mb-1">
+              {DEFAULT_SETTINGS.appName}
+            </h1>
+            <p className="text-sm md:text-base text-muted-foreground">منصة الفهم القرائي</p>
           </div>
         </div>
       </header>
@@ -128,21 +129,9 @@ export function HomeScreen() {
             >
               أنشئ حساباً جديداً
             </Button>
-            {/* رابط خفي لدخول الأدمن - يظهر عند الضغط على شعار المدرسة */}
-            <button
-              onClick={() => setShowAdminLink(!showAdminLink)}
-              className="w-10 h-10 rounded-full overflow-hidden opacity-40 hover:opacity-100 transition-all hover:scale-110"
-              title="للإدارة"
-            >
-              <img
-                src="/school-logo.png"
-                alt="مدرسة الساحل الأهلية (بنين)"
-                className="w-full h-full object-contain"
-              />
-            </button>
           </div>
 
-          {/* رابط دخول الأدمن - يظهر بعد الضغط على النقطة */}
+          {/* رابط دخول الأدمن - يظهر بعد الضغط على الشعار */}
           {showAdminLink && (
             <div className="mt-6 text-center animate-slide-up">
               <button
