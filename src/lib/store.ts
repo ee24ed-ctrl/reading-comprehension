@@ -315,6 +315,9 @@ export const useAppStore = create<AppState>()(
             skillScores,
             durationSec,
             answers: detailedAnswers,
+            // تخزين نسخة من الأسئلة مع النتيجة لعرضها في مراجعة الإجابات
+            // حتى بعد مسح currentTest
+            questions: [...test.questions],
           };
 
           set({
@@ -455,7 +458,7 @@ export const useAppStore = create<AppState>()(
     },
     {
       name: "saahil-reading-platform",
-      version: 5, // رفع الإصدار لتحديث الخطط لتكون شاملة لكل المراحل
+      version: 7, // رفع الإصدار لإصلاح خطأ infinite loop نهائياً
       // تجنّب تخزين currentUser و currentTest و currentScreen للحفاظ على بداية نظيفة
       partialize: (state) => ({
         users: state.users,
@@ -468,8 +471,8 @@ export const useAppStore = create<AppState>()(
       // ترحيل آمن: عند تغيّر الإصدار أو وجود بيانات تالفة، أعد بناء البيانات
       migrate: (persistedState: any, version: number) => {
         try {
-          // أي إصدار أقل من 5، أو بيانات تالفة، نعيد بناءها بالكامل
-          if (version < 5 || !persistedState || typeof persistedState !== "object") {
+          // أي إصدار أقل من 7، أو بيانات تالفة، نعيد بناءها بالكامل
+          if (version < 7 || !persistedState || typeof persistedState !== "object") {
             const fresh = getInitialData();
             return {
               ...persistedState,
@@ -519,19 +522,9 @@ export const useAppStore = create<AppState>()(
       },
       // تخطي أخطاء hydration
       skipHydration: false,
-      // التحقق النهائي بعد إعادة الترطيب - يضمن وجود البيانات
-      onRehydrateStorage: () => (state) => {
-        // إذا لم تكن البيانات موجودة بعد إعادة الترطيب، أعدها
-        if (state && (!state.users || state.users.length === 0)) {
-          const fresh = getInitialData();
-          state.users = fresh.users;
-          state.classrooms = fresh.classrooms;
-          state.testResults = fresh.testResults;
-          state.improvementPlans = fresh.improvementPlans;
-          state.customQuestions = fresh.customQuestions;
-          state.settings = fresh.settings;
-        }
-      },
+      // ملاحظة: لا نستخدم onRehydrateStorage لأنه يُسبب infinite loop
+      // عندما يُعدّل الـ state مباشرة بدون set().
+      // migrate يتكفّل بإعادة بناء البيانات عند الحاجة.
     }
   )
 );

@@ -277,13 +277,12 @@ function ImprovementPlanPreview({ plan, weakestSkill }: { plan: any; weakestSkil
 
 function AnswerReview({ result }: { result: any }) {
   const [isOpen, setIsOpen] = useState(false);
-  const questions = useAppStore((s) => s.currentTest?.questions) || [];
-  // نظراً لأن currentTest قد تم مسحه بعد الانتهاء، نعتمد على IDs في الإجابات
-  const allQuestions = useAppStore((s) => [
-    ...s.customQuestions,
-  ]);
+  // نعتمد فقط على الأسئلة المخزّنة في النتيجة نفسها (result.questions)
+  // لأنها تُخزّن عند إنهاء الاختبار (finishTest)
+  // هذا يتجنب تماماً الحاجة لقراءة customQuestions من المتجر وتجنب infinite loop
+  const questions = result.questions;
 
-  if (result.answers.length === 0) {
+  if (!questions || questions.length === 0 || result.answers.length === 0) {
     return null;
   }
 

@@ -104,6 +104,9 @@ export interface PlacementTestResult {
   skillScores: Record<SkillKey, { correct: number; total: number }>;
   durationSec: number;
   answers: StudentAnswer[];
+  // تخزين الأسئلة الكاملة مع النتيجة لعرضها في مراجعة الإجابات
+  // حتى بعد مسح currentTest
+  questions?: Question[];
 }
 
 // خطة تحسين
