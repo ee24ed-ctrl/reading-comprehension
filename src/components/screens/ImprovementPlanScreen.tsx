@@ -19,6 +19,8 @@ import {
   Sparkles,
   MessageSquare,
   ArrowRight,
+  Target,
+  Play,
 } from "lucide-react";
 import { CLASSIFICATION_INFO, SKILL_LABELS, SKILL_ICONS } from "@/lib/stages";
 
@@ -27,6 +29,8 @@ export function ImprovementPlanScreen() {
   const currentUser = useAppStore((s) => s.currentUser);
   const improvementPlans = useAppStore((s) => s.improvementPlans);
   const testResults = useAppStore((s) => s.testResults);
+  const trainingResults = useAppStore((s) => s.trainingResults);
+  const postTests = useAppStore((s) => s.postTests);
 
   if (!currentUser) return null;
 
@@ -148,13 +152,16 @@ export function ImprovementPlanScreen() {
           </CardContent>
         </Card>
 
-        {/* الجدول الأسبوعي */}
+        {/* الجدول الأسبوعي - مرتبط بالتدريبات */}
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <Calendar className="w-5 h-5 text-primary" />
-              الجدول الأسبوعي
+              الجدول الأسبوعي - تدريبات تفاعلية
             </CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
+              اضغط على أي مهمة للبدء في التدريب المرتبط بها. كل مهمة تتضمن تدريباً تفاعلياً يليه اختبار بعدي لقياس التحسّن.
+            </p>
           </CardHeader>
           <CardContent className="space-y-3">
             {/* تجميع المهام حسب الأسبوع */}
@@ -177,32 +184,52 @@ export function ImprovementPlanScreen() {
                       className="h-1.5 w-32"
                     />
                   </div>
-                  {/* قائمة مهام الأسبوع */}
+                  {/* قائمة مهام الأسبوع - قابلة للنقر */}
                   <div className="divide-y divide-border/50">
                     {weekTasks.map((task) => {
                       const skillInfo = SKILL_LABELS[task.skill];
                       const skillIcon = SKILL_ICONS[task.skill];
                       // هل هذه المهمة تركّز على المهارة الأضعف؟
                       const isFocusTask = task.title.includes("(تركيز)");
+                      // التحقق من حالة الطالب في هذه المهارة
+                      const hasTraining = trainingResults.some(
+                        (r) => r.studentId === currentUser.id && r.skill === task.skill
+                      );
+                      const hasPostTest = postTests.some(
+                        (p) => p.studentId === currentUser.id && p.skill === task.skill
+                      );
+                      const trainingResult = trainingResults.find(
+                        (r) => r.studentId === currentUser.id && r.skill === task.skill
+                      );
+                      const postTest = postTests.find(
+                        (p) => p.studentId === currentUser.id && p.skill === task.skill
+                      );
+                      const taskDone = hasPostTest;
+
                       return (
-                        <div
+                        <button
                           key={task.id}
-                          className={`p-3 transition-all ${
-                            task.completed
+                          onClick={() => setScreen("trainings_list")}
+                          className={`w-full text-right p-3 transition-all cursor-pointer hover:bg-primary/5 ${
+                            taskDone
                               ? "bg-emerald-50/30"
+                              : hasTraining
+                              ? "bg-amber-50/30"
                               : isFocusTask
-                              ? "bg-amber-50/30 hover:bg-amber-50/60"
-                              : "hover:bg-muted/30"
+                              ? "bg-rose-50/30"
+                              : ""
                           }`}
                         >
                           <div className="flex items-start gap-3">
                             <div className="flex-shrink-0 mt-0.5">
-                              {task.completed ? (
+                              {taskDone ? (
                                 <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                              ) : hasTraining ? (
+                                <Play className="w-5 h-5 text-amber-600" />
                               ) : isFocusTask ? (
-                                <Circle className="w-5 h-5 text-amber-500 fill-amber-100" />
+                                <BookOpen className="w-5 h-5 text-rose-600" />
                               ) : (
-                                <Circle className="w-5 h-5 text-muted-foreground/40" />
+                                <BookOpen className="w-5 h-5 text-muted-foreground/60" />
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
@@ -215,24 +242,92 @@ export function ImprovementPlanScreen() {
                                   {task.estimatedMinutes} دقيقة
                                 </Badge>
                                 {isFocusTask && (
-                                  <Badge className="text-xs bg-amber-500 hover:bg-amber-500">
+                                  <Badge className="text-xs bg-rose-500 hover:bg-rose-500">
                                     ⚡ تركيز
                                   </Badge>
                                 )}
+                                {taskDone && (
+                                  <Badge className="text-xs bg-emerald-500 hover:bg-emerald-500">
+                                    ✓ مكتملة
+                                  </Badge>
+                                )}
+                                {hasTraining && !taskDone && (
+                                  <Badge className="text-xs bg-amber-500 hover:bg-amber-500">
+                                    ⏳ بانتظار الاختبار البعدي
+                                  </Badge>
+                                )}
+                                {!hasTraining && (
+                                  <Badge variant="outline" className="text-xs">
+                                    ابدأ التدريب ←
+                                  </Badge>
+                                )}
                               </div>
-                              <h4 className={`font-bold text-sm ${task.completed ? "line-through opacity-60" : ""}`}>
+                              <h4 className={`font-bold text-sm ${taskDone ? "line-through opacity-60" : ""}`}>
                                 {task.title}
                               </h4>
                               <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{task.description}</p>
+                              {/* عرض النتائج إن وجدت */}
+                              {(trainingResult || postTest) && (
+                                <div className="mt-2 flex items-center gap-2 text-xs">
+                                  {trainingResult && (
+                                    <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-700">
+                                      التدريب: {trainingResult.percentage}%
+                                    </span>
+                                  )}
+                                  {postTest && (
+                                    <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700">
+                                      الاختبار البعدي: {postTest.percentage}%
+                                      {postTest.improvedFromPre >= 0
+                                        ? ` (+${postTest.improvedFromPre}%)`
+                                        : ` (${postTest.improvedFromPre}%)`}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
                             </div>
+                            <ChevronLeft className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-1" />
                           </div>
-                        </div>
+                        </button>
                       );
                     })}
                   </div>
                 </div>
               );
             })}
+          </CardContent>
+        </Card>
+
+        {/* بطاقة الإجراءات السريعة - تدريبات واختبارات */}
+        <Card className="mb-6 bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <BookOpen className="w-5 h-5 text-primary" />
+              <h3 className="font-bold">الوصول السريع</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                onClick={() => setScreen("trainings_list")}
+                className="gap-2 h-auto py-3 flex-col items-center"
+              >
+                <BookOpen className="w-5 h-5" />
+                <span className="text-sm font-bold">التدريبات</span>
+                <span className="text-xs opacity-90">
+                  {trainingResults.filter((r) => r.studentId === currentUser.id).length} مكتملة
+                </span>
+              </Button>
+              <Button
+                onClick={() => setScreen("trainings_list")}
+                variant="outline"
+                className="gap-2 h-auto py-3 flex-col items-center"
+                disabled={trainingResults.filter((r) => r.studentId === currentUser.id).length === 0}
+              >
+                <Target className="w-5 h-5" />
+                <span className="text-sm font-bold">الاختبار البعدي</span>
+                <span className="text-xs opacity-90">
+                  {postTests.filter((p) => p.studentId === currentUser.id).length} مكتملة
+                </span>
+              </Button>
+            </div>
           </CardContent>
         </Card>
 

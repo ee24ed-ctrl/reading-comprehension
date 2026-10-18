@@ -17,6 +17,10 @@ import {
   Calendar,
   Lightbulb,
   ChevronDown,
+  BookOpen,
+  Play,
+  Brain,
+  Award,
 } from "lucide-react";
 import { CLASSIFICATION_INFO, SKILL_LABELS, SKILL_ICONS } from "@/lib/stages";
 import {
@@ -231,6 +235,22 @@ function StatCard({
 
 function ImprovementPlanPreview({ plan, weakestSkill }: { plan: any; weakestSkill: string }) {
   const setScreen = useAppStore((s) => s.setScreen);
+  const currentUser = useAppStore((s) => s.currentUser);
+  const trainingResults = useAppStore((s) => s.trainingResults);
+  const postTests = useAppStore((s) => s.postTests);
+
+  if (!currentUser) return null;
+
+  // الحصول على المهارات الفريدة من الخطة الأسبوعية
+  const uniqueSkills = Array.from(new Set(plan.weeklySchedule.map((t: any) => t.skill))) as any[];
+
+  // إحصائيات تقدم الطالب في التدريبات
+  const completedTrainings = trainingResults.filter(
+    (r) => r.studentId === currentUser.id
+  ).length;
+  const completedPostTests = postTests.filter(
+    (p) => p.studentId === currentUser.id
+  ).length;
 
   return (
     <Card className="mb-6 bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
@@ -242,23 +262,130 @@ function ImprovementPlanPreview({ plan, weakestSkill }: { plan: any; weakestSkil
             {plan.status === "approved" ? "معتمدة" : plan.status === "in_progress" ? "قيد التنفيذ" : "مسودة"}
           </Badge>
         </div>
-        <p className="text-sm text-muted-foreground leading-relaxed mb-4">{plan.teacherNotes}</p>
+        <p className="text-sm text-muted-foreground leading-relaxed mb-4 whitespace-pre-line">{plan.teacherNotes}</p>
 
-        <div className="space-y-2">
-          {plan.weeklySchedule.slice(0, 2).map((task: any) => (
-            <div key={task.id} className="flex items-center gap-3 bg-card/70 rounded-lg p-3 border border-border/60">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Calendar className="w-5 h-5 text-primary" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-sm">الأسبوع {task.weekNumber}: {task.title}</span>
+        {/* المهارات المستهدفة في الخطة */}
+        <div className="mb-4">
+          <div className="text-xs font-medium text-muted-foreground mb-2">
+            المهارات المستهدفة في الخطة ({uniqueSkills.length} مهارات):
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {uniqueSkills.map((skill: any) => {
+              // التحقق من حالة الطالب في هذه المهارة
+              const hasTraining = trainingResults.some(
+                (r) => r.studentId === currentUser.id && r.skill === skill
+              );
+              const hasPostTest = postTests.some(
+                (p) => p.studentId === currentUser.id && p.skill === skill
+              );
+              return (
+                <Badge
+                  key={skill}
+                  variant="outline"
+                  className={`text-xs ${
+                    hasPostTest
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                      : hasTraining
+                      ? "bg-amber-50 text-amber-700 border-amber-300"
+                      : "bg-rose-50 text-rose-700 border-rose-300"
+                  }`}
+                >
+                  {SKILL_ICONS[skill as keyof typeof SKILL_ICONS]} {SKILL_LABELS[skill as keyof typeof SKILL_LABELS]}
+                  {hasPostTest ? " ✓" : hasTraining ? " ⏳" : " •"}
+                </Badge>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* أزرار الإجراءات المباشرة */}
+        <div className="grid grid-cols-2 gap-2 mt-4">
+          <Button
+            onClick={() => setScreen("trainings_list")}
+            className="gap-2"
+            size="sm"
+          >
+            <BookOpen className="w-4 h-4" />
+            بدء التدريبات
+            {completedTrainings > 0 && (
+              <Badge variant="secondary" className="text-xs mr-1">
+                {completedTrainings}
+              </Badge>
+            )}
+          </Button>
+          <Button
+            onClick={() => setScreen("trainings_list")}
+            variant="outline"
+            className="gap-2"
+            size="sm"
+            disabled={completedTrainings === 0}
+          >
+            <Play className="w-4 h-4" />
+            الاختبار البعدي
+            {completedPostTests > 0 && (
+              <Badge variant="secondary" className="text-xs mr-1">
+                {completedPostTests}
+              </Badge>
+            )}
+          </Button>
+        </div>
+
+        {/* معاينة المهام الأسبوعية */}
+        <div className="mt-4 pt-4 border-t">
+          <div className="text-xs font-medium text-muted-foreground mb-2">
+            المهام الأسبوعية:
+          </div>
+          <div className="space-y-2">
+            {plan.weeklySchedule.slice(0, 3).map((task: any) => {
+              const hasTraining = trainingResults.some(
+                (r) => r.studentId === currentUser.id && r.skill === task.skill
+              );
+              const hasPostTest = postTests.some(
+                (p) => p.studentId === currentUser.id && p.skill === task.skill
+              );
+              const isWeak = task.title?.includes("(تركيز)");
+              return (
+                <div
+                  key={task.id}
+                  className={`flex items-center gap-3 rounded-lg p-3 border ${
+                    hasPostTest
+                      ? "bg-emerald-50/40 border-emerald-200"
+                      : hasTraining
+                      ? "bg-amber-50/40 border-amber-200"
+                      : isWeak
+                      ? "bg-rose-50/40 border-rose-200"
+                      : "bg-card/70 border-border/60"
+                  }`}
+                >
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                    hasPostTest
+                      ? "bg-emerald-100"
+                      : hasTraining
+                      ? "bg-amber-100"
+                      : "bg-primary/10"
+                  }`}>
+                    {hasPostTest ? (
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                    ) : (
+                      <Calendar className="w-5 h-5 text-primary" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium text-sm">الأسبوع {task.weekNumber}: {task.title}</span>
+                      {isWeak && (
+                        <Badge className="text-xs bg-rose-500 hover:bg-rose-500">
+                          ⚡ تركيز
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{task.description}</p>
+                  </div>
+                  <Badge variant="outline" className="text-xs">{task.estimatedMinutes} د</Badge>
                 </div>
-                <p className="text-xs text-muted-foreground mt-0.5">{task.description}</p>
-              </div>
-              <Badge variant="secondary" className="text-xs">{task.estimatedMinutes} د</Badge>
-            </div>
-          ))}
+              );
+            })}
+          </div>
         </div>
 
         <Button
@@ -267,7 +394,7 @@ function ImprovementPlanPreview({ plan, weakestSkill }: { plan: any; weakestSkil
           className="w-full mt-3"
           size="sm"
         >
-          عرض الخطة الكاملة ({plan.weeklySchedule.length} أسابيع)
+          عرض الخطة الكاملة ({plan.weeklySchedule.length} مهمة)
           <ArrowLeft className="w-4 h-4 mr-1" />
         </Button>
       </CardContent>
