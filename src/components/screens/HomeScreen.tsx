@@ -154,7 +154,7 @@ export function HomeScreen() {
           {/* إحصائيات سريعة */}
           <div className="mt-14 grid grid-cols-3 gap-4 max-w-2xl mx-auto">
             <StatCard number="12" label="صف دراسي" />
-            <StatCard number="80+" label="سؤالاً تفاعلياً" />
+            <StatCard number="128+" label="سؤالاً تفاعلياً" />
             <StatCard number="4" label="مراحل دراسية" />
           </div>
         </div>

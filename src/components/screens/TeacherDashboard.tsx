@@ -362,7 +362,7 @@ export function TeacherDashboard() {
                   <div className="text-center py-12 text-muted-foreground">
                     <FileQuestion className="w-12 h-12 mx-auto mb-3 opacity-40" />
                     <p className="text-sm mb-2">لم تضف أي أسئلة مخصصة بعد</p>
-                    <p className="text-xs">النظام يستخدم الآن 80+ سؤالاً افتراضياً موزعة على المراحل الأربع</p>
+                    <p className="text-xs">النظام يستخدم الآن 128+ سؤالاً افتراضياً موزعة على المراحل الأربع</p>
                   </div>
                 ) : (
                   <div className="space-y-2 max-h-[500px] overflow-y-auto custom-scroll">

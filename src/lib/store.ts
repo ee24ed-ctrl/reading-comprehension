@@ -428,7 +428,7 @@ export const useAppStore = create<AppState>()(
     },
     {
       name: "saahil-reading-platform",
-      version: 2, // رفع الإصدار لإجبار إعادة التحميل عند تغيّر البيانات التجريبية
+      version: 3, // رفع الإصدار لإجبار إعادة التحميل عند إضافة أسئلة جديدة
       // تجنّب تخزين currentUser و currentTest و currentScreen للحفاظ على بداية نظيفة
       partialize: (state) => ({
         users: state.users,
@@ -440,8 +440,8 @@ export const useAppStore = create<AppState>()(
       }),
       // عند تغيّر الإصدار، أعد بناء البيانات من المصدر
       migrate: (persistedState: any, version: number) => {
-        if (version < 2) {
-          // إعادة بناء البيانات التجريبية بالكامل عند الانتقال للإصدار 2
+        if (version < 3) {
+          // إعادة بناء البيانات التجريبية بالكامل عند الانتقال للإصدار 3
           const fresh = getInitialData();
           return {
             ...persistedState,
