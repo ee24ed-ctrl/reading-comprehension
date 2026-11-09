@@ -64,6 +64,10 @@ const PostTestResultScreen = dynamic(
   () => import("@/components/screens/PostTestResultScreen").then((m) => m.PostTestResultScreen),
   { loading: () => <ScreenLoading />, ssr: false }
 );
+const DailyReadingScreen = dynamic(
+  () => import("@/components/screens/DailyReadingScreen").then((m) => m.DailyReadingScreen),
+  { loading: () => <ScreenLoading />, ssr: false }
+);
 
 export default function Home() {
   const currentScreen = useAppStore((s) => s.currentScreen);
@@ -118,6 +122,8 @@ export default function Home() {
       return <PostTestScreen />;
     case "post_test_result":
       return <PostTestResultScreen />;
+    case "daily_reading":
+      return <DailyReadingScreen />;
     default:
       return <HomeScreen />;
   }

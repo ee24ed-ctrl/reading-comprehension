@@ -17,6 +17,7 @@ import type {
   TrainingResult,
   PostTest,
   GradeKey,
+  DailyReadingLog,
 } from "./types";
 import {
   SEED_CLASSROOMS,
@@ -48,7 +49,8 @@ export type Screen =
   | "training_exercise"    // تنفيذ تدريب محدد
   | "training_result"      // نتيجة التدريب
   | "post_test"            // الاختبار البعدي بعد التدريب
-  | "post_test_result";    // نتيجة الاختبار البعدي
+  | "post_test_result"     // نتيجة الاختبار البعدي
+  | "daily_reading";       // قسم القراءة اليومية والقصص المصورة
 
 interface AppState {
   // التنقل
@@ -152,6 +154,22 @@ interface AppState {
   // مساعدات التدريبات
   getTrainingsBySkillForStudent: (studentId: string, skill: SkillKey) => TrainingResult[];
   getPostTestsForStudent: (studentId: string) => PostTest[];
+
+  // ====== القراءة اليومية والقصص المصورة ======
+  dailyReadingLogs: DailyReadingLog[];
+  activeDailyStoryId: string | null;
+  selectDailyStory: (storyId: string) => void;
+  completeDailyStory: (
+    storyId: string,
+    score: number,
+    timeSpentSec: number,
+    answers: number[]
+  ) => { pointsEarned: number; newStreak: number };
+  getDailyReadingStatus: (studentId?: string) => {
+    completedToday: boolean;
+    totalCompleted: number;
+    streak: number;
+  };
 }
 
 interface RegisterData {
@@ -179,6 +197,7 @@ function getInitialData() {
     // حقول التدريبات والاختبارات البعدية
     trainingResults: [] as TrainingResult[],
     postTests: [] as PostTest[],
+    dailyReadingLogs: [] as DailyReadingLog[],
   };
 }
 
@@ -826,11 +845,98 @@ export const useAppStore = create<AppState>()(
         getPostTestsForStudent: (studentId) => {
           return get().postTests.filter((p) => p.studentId === studentId);
         },
+
+        // ====== القراءة اليومية والقصص المصورة ======
+        dailyReadingLogs: initial.dailyReadingLogs,
+        activeDailyStoryId: null,
+
+        selectDailyStory: (storyId) => {
+          set({ activeDailyStoryId: storyId, currentScreen: "daily_reading" });
+        },
+
+        completeDailyStory: (storyId, score, timeSpentSec, answers) => {
+          const user = get().currentUser;
+          const studentId = user ? user.id : "guest";
+          const today = new Date().toISOString().split("T")[0];
+
+          // نقاط ومكافآت
+          const basePoints = 40;
+          const scoreBonus = score * 10;
+          const perfectBonus = score === 3 ? 20 : 0;
+          const pointsEarned = basePoints + scoreBonus + perfectBonus;
+
+          // تحديث الـ Streak
+          const existingLogs = get().dailyReadingLogs.filter((l) => l.studentId === studentId);
+          const alreadyReadToday = existingLogs.some((l) => l.completedAt.startsWith(today));
+          let newStreak = user?.streakDays || 0;
+          if (!alreadyReadToday) {
+            newStreak += 1;
+          }
+
+          const newLog: DailyReadingLog = {
+            id: `read_log_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+            storyId,
+            studentId,
+            completedAt: new Date().toISOString(),
+            score,
+            timeSpentSec,
+            answers,
+          };
+
+          const updatedLogs = [...get().dailyReadingLogs, newLog];
+
+          // تحديث المستخدم في حالة تسجيل الدخول
+          let updatedUser = user;
+          if (user) {
+            const currentPoints = user.points || 0;
+            const updatedPoints = currentPoints + pointsEarned;
+            const updatedBadges = [...(user.badges || [])];
+            if (newStreak >= 3 && !updatedBadges.includes("قارئ مواظب 🔥")) {
+              updatedBadges.push("قارئ مواظب 🔥");
+            }
+            if (newStreak >= 7 && !updatedBadges.includes("نجم الأسبوع القارئ ⭐")) {
+              updatedBadges.push("نجم الأسبوع القارئ ⭐");
+            }
+            if (updatedPoints >= 200 && !updatedBadges.includes("فارس الحكايات 📚")) {
+              updatedBadges.push("فارس الحكايات 📚");
+            }
+
+            updatedUser = {
+              ...user,
+              points: updatedPoints,
+              streakDays: newStreak,
+              badges: updatedBadges,
+            };
+
+            const updatedUsers = get().users.map((u) => (u.id === user.id ? updatedUser! : u));
+            set({ users: updatedUsers, currentUser: updatedUser });
+          }
+
+          set({ dailyReadingLogs: updatedLogs });
+
+          return { pointsEarned, newStreak };
+        },
+
+        getDailyReadingStatus: (studentId) => {
+          const sId = studentId || get().currentUser?.id;
+          if (!sId) {
+            return { completedToday: false, totalCompleted: 0, streak: 0 };
+          }
+          const today = new Date().toISOString().split("T")[0];
+          const logs = get().dailyReadingLogs.filter((l) => l.studentId === sId);
+          const completedToday = logs.some((l) => l.completedAt.startsWith(today));
+          const user = get().users.find((u) => u.id === sId) || get().currentUser;
+          return {
+            completedToday,
+            totalCompleted: logs.length,
+            streak: user?.streakDays || (completedToday ? 1 : 0),
+          };
+        },
       };
     },
     {
       name: "saahil-reading-platform",
-      version: 8, // رفع الإصدار لإضافة نظام التدريبات والاختبارات البعدية
+      version: 9, // رفع الإصدار لإضافة نظام القراءة اليومية
       // تجنّب تخزين currentUser و currentTest و currentScreen للحفاظ على بداية نظيفة
       partialize: (state) => ({
         users: state.users,
@@ -839,9 +945,10 @@ export const useAppStore = create<AppState>()(
         improvementPlans: state.improvementPlans,
         customQuestions: state.customQuestions,
         settings: state.settings,
-        // إضافة نتائج التدريبات والاختبارات البعدية للتخزين
+        // إضافة نتائج التدريبات والاختبارات البعدية والقراءة اليومية للتخزين
         trainingResults: state.trainingResults,
         postTests: state.postTests,
+        dailyReadingLogs: state.dailyReadingLogs,
       }),
       // ترحيل آمن: عند تغيّر الإصدار أو وجود بيانات تالفة، أعد بناء البيانات
       migrate: (persistedState: any, version: number) => {

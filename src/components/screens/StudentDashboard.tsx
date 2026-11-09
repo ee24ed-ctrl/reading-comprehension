@@ -59,8 +59,11 @@ export function StudentDashboard() {
   const startPlacementTest = useAppStore((s) => s.startPlacementTest);
   const startNafesExam = useAppStore((s) => s.startNafesExam);
   const settings = useAppStore((s) => s.settings);
+  const getDailyReadingStatus = useAppStore((s) => s.getDailyReadingStatus);
 
   if (!currentUser) return null;
+
+  const dailyStatus = getDailyReadingStatus(currentUser.id);
 
   const myResults = testResults
     .filter((r) => r.studentId === currentUser.id)
@@ -166,6 +169,41 @@ export function StudentDashboard() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* بطاقة تحدي القراءة اليومية السريع */}
+        <div className="mb-6">
+          <Card className="rounded-2xl border-2 border-emerald-200 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white shadow-md overflow-hidden">
+            <CardContent className="p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5 text-center sm:text-right">
+                <div className="w-12 h-12 rounded-xl bg-white/15 backdrop-blur-xs flex items-center justify-center shrink-0 shadow-inner">
+                  <BookOpen className="w-6 h-6 text-amber-300" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 justify-center sm:justify-start">
+                    <h3 className="font-bold text-base sm:text-lg">حكايات الساحل — القراءة اليومية المصورة</h3>
+                    <Badge className="bg-amber-400 text-amber-950 font-bold text-[10px] px-2 py-0.5">
+                      🔥 التزام: {dailyStatus.streak} أيام
+                    </Badge>
+                  </div>
+                  <p className="text-xs sm:text-sm text-emerald-100 mt-0.5">
+                    {dailyStatus.completedToday
+                      ? "أحسنت! قرأت قصة اليوم بنجاح، يمكنك استكشاف مزيد من القصص الرائعة!"
+                      : "قصة اليوم المصورة جاهزة لك! اقرأ في دقيقتين وأجب عن 3 أسئلة لكسب 50 نقطة ⭐"}
+                  </p>
+                </div>
+              </div>
+
+              <Button
+                onClick={() => setScreen("daily_reading")}
+                className="bg-white hover:bg-emerald-50 text-emerald-800 font-bold text-sm px-5 py-2.5 rounded-xl shadow-sm shrink-0 gap-1.5 w-full sm:w-auto"
+              >
+                <Sparkles className="w-4 h-4 text-emerald-600" />
+                {dailyStatus.completedToday ? "تصفح القصص" : "اقرأ قصة اليوم"}
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+            </CardContent>
+          </Card>
         </div>
 
         {!latest ? (

@@ -17,6 +17,7 @@ import {
   LogIn,
   UserPlus,
   Lock,
+  Flame,
 } from "lucide-react";
 import { DEFAULT_SETTINGS, GRADES, STAGES } from "@/lib/stages";
 import { ASSETS } from "@/lib/assets";
@@ -190,6 +191,39 @@ export function HomeScreen() {
             <p className="text-sm md:text-base text-muted-foreground max-w-2xl mx-auto leading-relaxed">
               اختر مرحلتك التعليمية للدخول المباشر إلى اختبارات وتدريبات الفهم القرائي المصممة خصيصاً لكل فئة عمرية.
             </p>
+          </div>
+
+          {/* بانر قسم القراءة اليومية والقصص المصورة */}
+          <div className="mb-8">
+            <Card className="rounded-3xl border-2 border-emerald-300 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white shadow-xl overflow-hidden relative">
+              <div className="absolute left-0 top-0 bottom-0 w-1/3 bg-white/5 rounded-r-full pointer-events-none" />
+              <CardContent className="p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
+                <div className="space-y-3 text-center md:text-right">
+                  <div className="inline-flex items-center gap-2 bg-amber-400 text-amber-950 px-3 py-1 rounded-full text-xs font-black shadow-sm">
+                    <Flame className="w-4 h-4 fill-amber-950 text-amber-950 animate-bounce" />
+                    جديد: تحدي القراءة اليومية للطلاب
+                  </div>
+                  <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+                    حكايات الساحل — قصص مصورة وقراءة يومية
+                  </h3>
+                  <p className="text-emerald-100 text-sm sm:text-base max-w-xl leading-relaxed">
+                    قصص قصيرة يومية مصورة برسومات جميلة تناسب كل مرحلة دراسية، تنتهي بـ 3 أسئلة فهم قرائي ذكية ونقاط وشارات فورية!
+                  </p>
+                </div>
+
+                <div className="shrink-0 flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                  <Button
+                    onClick={() => setScreen("daily_reading")}
+                    size="lg"
+                    className="bg-white hover:bg-emerald-50 text-emerald-800 font-extrabold text-base py-6 px-8 rounded-2xl shadow-lg shadow-black/10 gap-2 w-full sm:w-auto"
+                  >
+                    <BookOpen className="w-5 h-5 text-emerald-600" />
+                    ابدأ قراءة قصة اليوم الآن
+                    <ArrowLeft className="w-5 h-5" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* قسم بطاقات المراحل الدراسية الأربع */}

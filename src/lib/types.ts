@@ -286,3 +286,43 @@ export interface TeacherAlert {
   severity: "info" | "warning" | "critical";
   createdAt: string;
 }
+
+// ----------------------------------------------------
+// القراءة اليومية والقصص المصورة (Daily Reading)
+// ----------------------------------------------------
+export interface DailyStoryQuestion {
+  id: string;
+  questionText: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+  skill: SkillKey;
+}
+
+export interface DailyStory {
+  id: string;
+  dayNumber: number;
+  title: string;
+  stage: StageKey;
+  stageLabel: string;
+  gradeLevelLabel: string;
+  category: string;
+  categoryColor: string;
+  theme: "nature" | "adventure" | "history" | "science" | "morals" | "space";
+  readTimeMin: number;
+  wordCount: number;
+  passage: string;
+  moral: string;
+  questions: [DailyStoryQuestion, DailyStoryQuestion, DailyStoryQuestion];
+}
+
+export interface DailyReadingLog {
+  id: string;
+  storyId: string;
+  studentId: string;
+  completedAt: string;
+  score: number; // 0 - 3
+  timeSpentSec: number;
+  answers: number[];
+}
+
