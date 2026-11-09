@@ -1,6 +1,7 @@
 "use client";
 
 import { useAppStore } from "@/lib/store";
+import { ASSETS } from "@/lib/assets";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +22,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Brain,
+  GraduationCap,
 } from "lucide-react";
 import {
   CLASSIFICATION_INFO,
@@ -29,6 +31,9 @@ import {
   STAGES,
   GRADES,
 } from "@/lib/stages";
+import { getNafesExamsByStage } from "@/lib/nafes-exams";
+import type { StageKey } from "@/lib/types";
+import { toast } from "sonner";
 import {
   ResponsiveContainer,
   LineChart,
@@ -52,6 +57,7 @@ export function StudentDashboard() {
   const testResults = useAppStore((s) => s.testResults);
   const improvementPlans = useAppStore((s) => s.improvementPlans);
   const startPlacementTest = useAppStore((s) => s.startPlacementTest);
+  const startNafesExam = useAppStore((s) => s.startNafesExam);
   const settings = useAppStore((s) => s.settings);
 
   if (!currentUser) return null;
@@ -63,10 +69,17 @@ export function StudentDashboard() {
   const latest = myResults[myResults.length - 1];
   const plan = improvementPlans.find((p) => p.studentId === currentUser.id);
   const stage = currentUser.gradeKey ? STAGES[GRADES[currentUser.gradeKey].stage] : null;
+  const stageKey: StageKey = currentUser.gradeKey ? GRADES[currentUser.gradeKey].stage : "primary_lower";
+  const myNafesExams = getNafesExamsByStage(stageKey);
 
   const handleRetakeTest = () => {
     if (!stage) return;
     startPlacementTest(stage.key);
+    setScreen("placement_test");
+  };
+
+  const handleStartNafes = (examId: string) => {
+    startNafesExam(examId);
     setScreen("placement_test");
   };
 
@@ -82,7 +95,8 @@ export function StudentDashboard() {
             <div className="w-12 h-12 flex items-center justify-center">
               { }
               <img
-                src="/school-logo.png"
+                src={ASSETS.schoolLogo}
+                onError={(e) => { e.currentTarget.src = ASSETS.fallbackLogo; }}
                 alt="شعار مدرسة الساحل الأهلية (بنين)"
                 className="w-full h-full object-contain"
               />
@@ -92,15 +106,23 @@ export function StudentDashboard() {
               <p className="text-xs text-muted-foreground">{settings.appName} — {settings.schoolName}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-lg">
-              <Flame className="w-4 h-4 text-accent" />
-              <span className="text-xs font-medium">{currentUser.streakDays || 0} يوم</span>
-              <div className="w-px h-3 bg-border mx-1" />
-              <Trophy className="w-4 h-4 text-amber-500" />
-              <span className="text-xs font-medium">{currentUser.points || 0} نقطة</span>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-muted/50 rounded-lg">
+              <Flame className="w-3.5 h-3.5 text-accent" />
+              <span className="text-[11px] sm:text-xs font-medium">{currentUser.streakDays || 0} يوم</span>
+              <div className="w-px h-3 bg-border mx-0.5 sm:mx-1" />
+              <Trophy className="w-3.5 h-3.5 text-amber-500" />
+              <span className="text-[11px] sm:text-xs font-medium">{currentUser.points || 0} ن</span>
             </div>
-            <Button variant="ghost" size="sm" onClick={logout} className="text-muted-foreground">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                logout();
+                toast.success("تم تسجيل الخروج بنجاح");
+              }}
+              className="text-muted-foreground hover:text-rose-600 gap-1"
+            >
               <LogOut className="w-4 h-4 ml-1" />
               خروج
             </Button>
@@ -147,23 +169,64 @@ export function StudentDashboard() {
         </div>
 
         {!latest ? (
-          <Card className="border-amber-200 bg-amber-50">
-            <CardContent className="p-6 text-center">
-              <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-3" />
-              <h3 className="font-bold mb-2">لم تخضع لاختبار تحديد المستوى بعد</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                يجب إجراء اختبار تحديد المستوى أولاً لتصنيفك وإنشاء خطة تحسين مناسبة.
-              </p>
-              <Button onClick={handleRetakeTest} size="lg" className="gap-2">
-                <Target className="w-4 h-4" />
-                ابدأ اختبار تحديد المستوى
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="space-y-6">
+            <Card className="border-emerald-200 bg-gradient-to-r from-emerald-50/80 via-teal-50/50 to-emerald-50/80 shadow-sm">
+              <CardContent className="p-6 md:p-8 text-center">
+                <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto mb-4 shadow-sm">
+                  <Target className="w-8 h-8" />
+                </div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-600 text-white text-xs font-bold mb-3 shadow-xs">
+                  <span>🇸🇦 الاختبارات الوطنية (نافس) 1448</span>
+                  <span>•</span>
+                  <span>معتمد ETEC</span>
+                </div>
+                <h3 className="text-xl md:text-2xl font-bold mb-2 text-foreground">
+                  أهلاً بك! ابدأ باختيار نموذج اختبار نافس لمرحلتك
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-xl mx-auto mb-6 leading-relaxed">
+                  تم إعداد نماذج مقننة متوافقة مع معايير هيئة تقويم التعليم والتدريب (ETEC) والمناهج الوزارية السعودية. اختر أحد النماذج أدناه لبدء تقييم مستواك القرائي وتحديد مسارك التدريبي.
+                </p>
+                <div className="flex items-center justify-center gap-3 flex-wrap">
+                  <Button onClick={handleRetakeTest} size="lg" className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 shadow-md">
+                    <Target className="w-5 h-5" />
+                    بدء الاختبار الموصى به (النموذج 1)
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* بطاقات نماذج نافس لمرحلته */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-emerald-600" />
+                  نماذج اختبارات نافس المقننة ({stage?.label || "مرحلتك"})
+                </h3>
+                <Badge variant="outline" className="text-xs border-emerald-300 text-emerald-700 bg-emerald-50 font-bold">
+                  {myNafesExams.length} نماذج وزارية
+                </Badge>
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-4">
+                {myNafesExams.map((exam, idx) => (
+                  <NafesExamCard
+                    key={exam.id}
+                    exam={exam}
+                    index={idx + 1}
+                    onStart={() => handleStartNafes(exam.id)}
+                    lastResult={myResults.filter((r) => r.examId === exam.id).pop()}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
         ) : (
           <Tabs defaultValue="overview" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
               <TabsTrigger value="overview" className="text-xs md:text-sm">نظرة عامة</TabsTrigger>
+              <TabsTrigger value="nafes" className="text-xs md:text-sm font-bold text-emerald-700 data-[state=active]:bg-emerald-600 data-[state=active]:text-white">
+                🇸🇦 اختبارات نافس ({myNafesExams.length})
+              </TabsTrigger>
               <TabsTrigger value="skills" className="text-xs md:text-sm">تحليل المهارات</TabsTrigger>
               <TabsTrigger value="progress" className="text-xs md:text-sm">منحنى التقدم</TabsTrigger>
               <TabsTrigger value="achievements" className="text-xs md:text-sm">إنجازاتي</TabsTrigger>
@@ -318,6 +381,97 @@ export function StudentDashboard() {
                   </CardContent>
                 </Card>
               )}
+
+              {/* بطاقة نماذج اختبارات نافس الوطنية المقننة */}
+              <Card className="border-emerald-200 bg-gradient-to-br from-emerald-50/70 via-card to-teal-50/40 shadow-xs">
+                <CardHeader>
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <CardTitle className="flex items-center gap-2 text-lg text-emerald-950">
+                      <BookOpen className="w-5 h-5 text-emerald-600" />
+                      اختبارات نافس الوطنية المقننة (ETEC 1448)
+                    </CardTitle>
+                    <Badge className="bg-emerald-600 text-white text-xs font-bold">
+                      {stage?.label || "مرحلتك"} • {myNafesExams.length} نماذج وزارية
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
+                    نماذج مقننة تحاكي الاختبارات الوطنية لهيئة تقويم التعليم والتدريب وكتب وزارة التعليم السعودية (لغتي 1448).
+                  </p>
+                  <div className="grid md:grid-cols-3 gap-3">
+                    {myNafesExams.map((exam, idx) => {
+                      const res = myResults.filter((r) => r.examId === exam.id).pop();
+                      return (
+                        <div
+                          key={exam.id}
+                          className="p-3.5 bg-card rounded-xl border border-border/80 flex flex-col justify-between hover:border-emerald-400 transition-all shadow-xs"
+                        >
+                          <div>
+                            <div className="flex items-center justify-between gap-1 mb-1.5">
+                              <Badge variant="outline" className="text-[10px] border-emerald-300 text-emerald-700 bg-emerald-50 font-bold">
+                                النموذج {idx + 1}
+                              </Badge>
+                              {res ? (
+                                <span className="text-xs font-bold text-emerald-600">
+                                  {res.percentage}%
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-muted-foreground">غير مختبر</span>
+                              )}
+                            </div>
+                            <h5 className="font-bold text-xs line-clamp-2 mb-1 text-foreground">
+                              {exam.title}
+                            </h5>
+                            <p className="text-[11px] text-muted-foreground line-clamp-2 mb-2">
+                              {exam.description}
+                            </p>
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => handleStartNafes(exam.id)}
+                            className="w-full text-xs h-8 bg-emerald-600 hover:bg-emerald-700 text-white mt-2"
+                          >
+                            {res ? "إعادة الاختبار" : "ابدأ الاختبار"}
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* تبويب اختبارات نافس الوطنية المفصل */}
+            <TabsContent value="nafes" className="space-y-4">
+              <div className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-2xl p-6 shadow-md">
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  <Badge className="bg-white/20 text-white border-white/30 text-xs">
+                    هيئة تقويم التعليم والتدريب (ETEC)
+                  </Badge>
+                  <Badge className="bg-emerald-500/50 text-white border-white/30 text-xs">
+                    وزارة التعليم 1448
+                  </Badge>
+                </div>
+                <h3 className="text-xl md:text-2xl font-bold mb-2">
+                  الاختبارات الوطنية (نافس) - {stage?.label || "المرحلة الدراسية"}
+                </h3>
+                <p className="text-sm text-emerald-50 max-w-2xl leading-relaxed">
+                  نماذج اختبارات مقننة ومطابقة لمواصفات ومعايير الاختبارات الوطنية (نافس) في الفهم القرائي. تغطي الأبعاد الإدراكية الأربعة: الفهم المباشر، والاستنتاج، والتفسير والدمج، والتقييم والنقد.
+                </p>
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-4">
+                {myNafesExams.map((exam, idx) => (
+                  <NafesExamCard
+                    key={exam.id}
+                    exam={exam}
+                    index={idx + 1}
+                    onStart={() => handleStartNafes(exam.id)}
+                    lastResult={myResults.filter((r) => r.examId === exam.id).pop()}
+                  />
+                ))}
+              </div>
             </TabsContent>
 
             {/* تحليل المهارات */}
@@ -561,4 +715,88 @@ function getProgressData(results: any[]) {
     percentage: r.percentage,
     classification: r.classification,
   }));
+}
+
+function NafesExamCard({
+  exam,
+  index,
+  onStart,
+  lastResult,
+}: {
+  exam: any;
+  index: number;
+  onStart: () => void;
+  lastResult?: any;
+}) {
+  return (
+    <Card className="border-border/70 hover:border-emerald-400 transition-all hover:shadow-md flex flex-col justify-between overflow-hidden bg-card">
+      <div className="p-5 flex-1 flex flex-col">
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold">
+            {exam.badge}
+          </Badge>
+          <span className="text-xs text-muted-foreground font-mono">النموذج #{index}</span>
+        </div>
+
+        <h4 className="font-bold text-base mb-2 text-foreground line-clamp-2">
+          {exam.title}
+        </h4>
+
+        <div className="space-y-1.5 mb-3 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <GraduationCap className="w-3.5 h-3.5 text-primary" />
+            <span>{exam.gradeTarget}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <BookOpen className="w-3.5 h-3.5 text-emerald-600" />
+            <span>{exam.curriculum}</span>
+          </div>
+        </div>
+
+        <p className="text-xs text-muted-foreground mb-4 leading-relaxed line-clamp-3">
+          {exam.description}
+        </p>
+
+        {/* أبعاد نافس */}
+        <div className="mb-4 mt-auto">
+          <div className="text-[11px] font-semibold text-muted-foreground mb-1.5">أبعاد التقييم:</div>
+          <div className="flex flex-wrap gap-1">
+            {exam.dimensions.map((dim: string, dIdx: number) => (
+              <span key={dIdx} className="text-[10px] bg-muted px-2 py-0.5 rounded text-foreground/80 font-medium">
+                {dim}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="p-4 bg-muted/30 border-t border-border/50 flex items-center justify-between gap-3">
+        <div>
+          {lastResult ? (
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-bold text-emerald-600">{lastResult.percentage}%</span>
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-emerald-300 bg-emerald-50 text-emerald-700 font-bold">
+                مكتمل
+              </Badge>
+            </div>
+          ) : (
+            <Badge variant="secondary" className="text-[10px] px-2 py-0.5 text-muted-foreground">
+              غير مختبر
+            </Badge>
+          )}
+          <div className="text-[11px] text-muted-foreground mt-0.5">
+            {exam.questions.length} أسئلة • {exam.timeLimitMin} دقيقة
+          </div>
+        </div>
+
+        <Button
+          onClick={onStart}
+          size="sm"
+          className={lastResult ? "border border-emerald-500 text-emerald-700 bg-emerald-50 hover:bg-emerald-100" : "bg-emerald-600 hover:bg-emerald-700 text-white"}
+        >
+          {lastResult ? "إعادة الاختبار" : "ابدأ الاختبار"}
+        </Button>
+      </div>
+    </Card>
+  );
 }

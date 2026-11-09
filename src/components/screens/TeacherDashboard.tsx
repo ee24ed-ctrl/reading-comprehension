@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAppStore } from "@/lib/store";
+import { ASSETS } from "@/lib/assets";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +53,7 @@ import {
   GRADES,
   STAGE_ORDER,
 } from "@/lib/stages";
+import { NAFES_EXAMS, getNafesExamsByStage } from "@/lib/nafes-exams";
 import type { Question, QuestionType, SkillKey, StageKey } from "@/lib/types";
 import { toast } from "sonner";
 
@@ -67,11 +69,13 @@ export function TeacherDashboard() {
   const addQuestion = useAppStore((s) => s.addQuestion);
   const approvePlan = useAppStore((s) => s.approvePlan);
   const updatePlan = useAppStore((s) => s.updatePlan);
+  const startNafesExam = useAppStore((s) => s.startNafesExam);
   const settings = useAppStore((s) => s.settings);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterClass, setFilterClass] = useState<string>("all");
   const [filterLevel, setFilterLevel] = useState<string>("all");
+  const [nafesStageFilter, setNafesStageFilter] = useState<string>("all");
   const [showAddQuestion, setShowAddQuestion] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
 
@@ -129,7 +133,8 @@ export function TeacherDashboard() {
             <div className="w-12 h-12 flex items-center justify-center">
               { }
               <img
-                src="/school-logo.png"
+                src={ASSETS.schoolLogo}
+                onError={(e) => { e.currentTarget.src = ASSETS.fallbackLogo; }}
                 alt="شعار مدرسة الساحل الأهلية (بنين)"
                 className="w-full h-full object-contain"
               />
@@ -139,7 +144,15 @@ export function TeacherDashboard() {
               <p className="text-xs text-muted-foreground">{currentUser.name}</p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={logout} className="text-muted-foreground">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              logout();
+              toast.success("تم تسجيل الخروج بنجاح");
+            }}
+            className="text-muted-foreground hover:text-rose-600 gap-1"
+          >
             <LogOut className="w-4 h-4 ml-1" />
             خروج
           </Button>
@@ -156,11 +169,14 @@ export function TeacherDashboard() {
         </div>
 
         <Tabs defaultValue="students" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
-            <TabsTrigger value="students" className="text-xs md:text-sm">طلابي</TabsTrigger>
-            <TabsTrigger value="plans" className="text-xs md:text-sm">خطط التحسين</TabsTrigger>
-            <TabsTrigger value="questions" className="text-xs md:text-sm">الأسئلة</TabsTrigger>
-            <TabsTrigger value="alerts" className="text-xs md:text-sm">
+          <TabsList className="flex flex-wrap sm:grid sm:grid-cols-5 w-full h-auto p-1 gap-1">
+            <TabsTrigger value="students" className="text-xs md:text-sm flex-1 sm:flex-initial">طلابي</TabsTrigger>
+            <TabsTrigger value="nafes" className="text-xs md:text-sm font-bold text-emerald-700 data-[state=active]:bg-emerald-600 data-[state=active]:text-white flex-1 sm:flex-initial">
+              🇸🇦 نافس ({NAFES_EXAMS.length})
+            </TabsTrigger>
+            <TabsTrigger value="plans" className="text-xs md:text-sm flex-1 sm:flex-initial">خطط التحسين</TabsTrigger>
+            <TabsTrigger value="questions" className="text-xs md:text-sm flex-1 sm:flex-initial">الأسئلة</TabsTrigger>
+            <TabsTrigger value="alerts" className="text-xs md:text-sm flex-1 sm:flex-initial">
               التنبيهات
               {alerts.length > 0 && (
                 <Badge variant="destructive" className="text-xs mr-1 h-4 px-1.5">
@@ -179,18 +195,18 @@ export function TeacherDashboard() {
                     <Users className="w-5 h-5 text-primary" />
                     طلاب فصولي
                   </CardTitle>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <div className="relative">
+                  <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+                    <div className="relative w-full sm:w-40">
                       <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <Input
                         placeholder="بحث..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pr-9 w-40 text-sm"
+                        className="pr-9 w-full sm:w-40 text-sm"
                       />
                     </div>
                     <Select value={filterClass} onValueChange={setFilterClass}>
-                      <SelectTrigger className="w-40 text-sm">
+                      <SelectTrigger className="w-full sm:w-40 text-sm">
                         <SelectValue placeholder="كل الفصول" />
                       </SelectTrigger>
                       <SelectContent>
@@ -201,7 +217,7 @@ export function TeacherDashboard() {
                       </SelectContent>
                     </Select>
                     <Select value={filterLevel} onValueChange={setFilterLevel}>
-                      <SelectTrigger className="w-40 text-sm">
+                      <SelectTrigger className="w-full sm:w-40 text-sm">
                         <SelectValue placeholder="كل المستويات" />
                       </SelectTrigger>
                       <SelectContent>
@@ -291,6 +307,152 @@ export function TeacherDashboard() {
                       لا يوجد طلاب مطابقون للبحث
                     </div>
                   )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* تبويب اختبارات نافس الوطنية 1448 للمعلم */}
+          <TabsContent value="nafes" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-lg text-emerald-950">
+                      <BookOpen className="w-5 h-5 text-emerald-600" />
+                      بنك اختبارات نافس الوطنية المقننة (ETEC 1448)
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      نماذج اختبارات مقننة متوافقة مع اختبارات نافس الوزارية والكتب المدرسية السعودية عبر جميع المراحل
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Select value={nafesStageFilter} onValueChange={setNafesStageFilter}>
+                      <SelectTrigger className="w-48 text-xs">
+                        <SelectValue placeholder="تصفية حسب المرحلة" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">كافة المراحل (12 نموذجاً)</SelectItem>
+                        <SelectItem value="primary_lower">الصفوف الأولية (1-3)</SelectItem>
+                        <SelectItem value="primary_upper">الصفوف العليا (4-6)</SelectItem>
+                        <SelectItem value="intermediate">المرحلة المتوسطة (1-3)</SelectItem>
+                        <SelectItem value="secondary">المرحلة الثانوية (مسارات)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {/* إحصائيات سريعة لاختبارات نافس */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                  <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+                    <div className="text-xs text-emerald-700 font-medium">إجمالي النماذج المقننة</div>
+                    <div className="text-2xl font-bold text-emerald-900 mt-1">{NAFES_EXAMS.length} نماذج</div>
+                  </div>
+                  <div className="p-3 bg-sky-50 rounded-xl border border-sky-200">
+                    <div className="text-xs text-sky-700 font-medium">المراحل المشمولة</div>
+                    <div className="text-2xl font-bold text-sky-900 mt-1">4 مراحل كاملة</div>
+                  </div>
+                  <div className="p-3 bg-amber-50 rounded-xl border border-amber-200">
+                    <div className="text-xs text-amber-700 font-medium">النماذج لكل مرحلة</div>
+                    <div className="text-2xl font-bold text-amber-900 mt-1">3 نماذج مقننة</div>
+                  </div>
+                  <div className="p-3 bg-purple-50 rounded-xl border border-purple-200">
+                    <div className="text-xs text-purple-700 font-medium">الأبعاد الإدراكية</div>
+                    <div className="text-2xl font-bold text-purple-900 mt-1">4 أبعاد نافس ETEC</div>
+                  </div>
+                </div>
+
+                {/* شبكة نماذج نافس */}
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {NAFES_EXAMS.filter((exam) =>
+                    nafesStageFilter === "all" ? true : exam.stage === nafesStageFilter
+                  ).map((exam) => {
+                    const examStudentResults = testResults.filter((r) => {
+                      const isMyStudent = myStudents.some((s) => s.id === r.studentId);
+                      return isMyStudent && r.examId === exam.id;
+                    });
+                    const testedCount = examStudentResults.length;
+                    const avgScore =
+                      testedCount > 0
+                        ? Math.round(
+                            examStudentResults.reduce((sum, r) => sum + r.percentage, 0) / testedCount
+                          )
+                        : null;
+
+                    return (
+                      <Card
+                        key={exam.id}
+                        className="border-border/80 hover:border-emerald-400 transition-all flex flex-col justify-between overflow-hidden"
+                      >
+                        <div className="p-4 flex-1">
+                          <div className="flex items-center justify-between gap-1 mb-2">
+                            <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold">
+                              {exam.badge}
+                            </Badge>
+                            <Badge variant="outline" className="text-[10px]">
+                              {STAGES[exam.stage].shortLabel}
+                            </Badge>
+                          </div>
+
+                          <h4 className="font-bold text-sm text-foreground mb-1.5 line-clamp-2">
+                            {exam.title}
+                          </h4>
+
+                          <div className="text-xs text-muted-foreground space-y-1 mb-3">
+                            <div className="flex items-center gap-1.5">
+                              <GraduationCap className="w-3.5 h-3.5 text-primary" />
+                              <span>{exam.gradeTarget}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <BookOpen className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>{exam.curriculum}</span>
+                            </div>
+                          </div>
+
+                          <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
+                            {exam.description}
+                          </p>
+
+                          <div className="flex flex-wrap gap-1 mb-2">
+                            {exam.dimensions.map((dim, dIdx) => (
+                              <span
+                                key={dIdx}
+                                className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-foreground/80 font-medium"
+                              >
+                                {dim}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="p-3 bg-muted/40 border-t border-border/50 flex items-center justify-between gap-2">
+                          <div className="text-[11px] text-muted-foreground">
+                            {testedCount > 0 ? (
+                              <span>
+                                اختبره <strong className="text-foreground">{testedCount}</strong> طلاب • متوسط:{" "}
+                                <strong className="text-emerald-600">{avgScore}%</strong>
+                              </span>
+                            ) : (
+                              <span>لم يختبره طلاب بعد</span>
+                            )}
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              startNafesExam(exam.id);
+                              toast.info(`جارٍ فتح معاينة: ${exam.title}`);
+                            }}
+                            className="text-xs h-7 border-emerald-400 text-emerald-700 hover:bg-emerald-50"
+                          >
+                            معاينة النموذج
+                          </Button>
+                        </div>
+                      </Card>
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>

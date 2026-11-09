@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAppStore } from "@/lib/store";
+import { ASSETS } from "@/lib/assets";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -16,6 +17,7 @@ import {
   BookOpen,
   Send,
   Volume2,
+  LogOut,
 } from "lucide-react";
 import { QUESTION_TYPE_LABELS, SKILL_LABELS } from "@/lib/stages";
 import { toast } from "sonner";
@@ -34,6 +36,7 @@ import {
 export function PlacementTestScreen() {
   const test = useAppStore((s) => s.currentTest);
   const setScreen = useAppStore((s) => s.setScreen);
+  const logout = useAppStore((s) => s.logout);
   const answerQuestion = useAppStore((s) => s.answerQuestion);
   const nextQuestion = useAppStore((s) => s.nextQuestion);
   const previousQuestion = useAppStore((s) => s.previousQuestion);
@@ -155,15 +158,23 @@ export function PlacementTestScreen() {
               <div className="w-11 h-11 flex items-center justify-center">
                 { }
                 <img
-                  src="/school-logo.png"
+                  src={ASSETS.schoolLogo}
+                  onError={(e) => { e.currentTarget.src = ASSETS.fallbackLogo; }}
                   alt="شعار مدرسة الساحل الأهلية (بنين)"
                   className="w-full h-full object-contain"
                 />
               </div>
               <div>
-                <h2 className="font-bold text-sm">اختبار تحديد المستوى</h2>
-                <p className="text-xs text-muted-foreground">
-                  السؤال {test.currentQuestionIndex + 1} من {test.questions.length}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <h2 className="font-bold text-sm md:text-base">
+                    {test.examTitle || "اختبار نافس الوطني - لغتي"}
+                  </h2>
+                  <Badge variant="outline" className="text-[10px] bg-emerald-50 text-emerald-700 border-emerald-300 font-bold">
+                    معتمد ETEC 1448
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  السؤال {test.currentQuestionIndex + 1} من {test.questions.length} • تم الإجابة على {answeredCount}
                 </p>
               </div>
             </div>
@@ -181,6 +192,35 @@ export function PlacementTestScreen() {
                 <Clock className="w-4 h-4" />
                 {formatTime(timeLeft)}
               </div>
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground hover:text-rose-600 gap-1">
+                    <LogOut className="w-3.5 h-3.5" />
+                    خروج
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>تسجيل الخروج من الاختبار</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      هل تود تسجيل الخروج والعودة للصفحة الرئيسية؟ يمكنك العودة للاختبار في أي وقت.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>متابعة الاختبار</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => {
+                        logout();
+                        toast.success("تم تسجيل الخروج بنجاح");
+                      }}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      تأكيد الخروج
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
 
@@ -233,6 +273,11 @@ export function PlacementTestScreen() {
           <CardContent className={`p-5 md:p-8 ${isLowStage ? "md:p-8" : ""}`}>
             {/* شارات السؤال */}
             <div className="flex flex-wrap items-center gap-2 mb-4">
+              {currentQuestion.curriculum && (
+                <Badge className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1 shadow-xs">
+                  <span>🇸🇦</span> {currentQuestion.curriculum}
+                </Badge>
+              )}
               <Badge variant="secondary" className="text-xs">
                 {QUESTION_TYPE_LABELS[currentQuestion.type]}
               </Badge>
@@ -403,7 +448,7 @@ export function PlacementTestScreen() {
         </Card>
 
         {/* أزرار التنقل */}
-        <div className="mt-6 flex items-center justify-between gap-3">
+        <div className="mt-6 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3">
           <Button
             variant="outline"
             onClick={previousQuestion}
@@ -414,9 +459,9 @@ export function PlacementTestScreen() {
             السابق
           </Button>
 
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="order-3 sm:order-2 w-full sm:w-auto text-center flex items-center justify-center gap-2 text-xs sm:text-sm text-muted-foreground">
             {answeredCount === test.questions.length ? (
-              <Badge variant="default" className="bg-emerald-600">
+              <Badge variant="default" className="bg-emerald-600 text-xs">
                 <CheckCircle2 className="w-3 h-3 ml-1" />
                 تمت الإجابة على جميع الأسئلة
               </Badge>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useAppStore } from "@/lib/store";
+import { ASSETS } from "@/lib/assets";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -119,7 +120,12 @@ export function TrainingsListScreen() {
           </button>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 flex items-center justify-center">
-              <img src="/school-logo.png" alt="شعار المدرسة" className="w-full h-full object-contain" />
+              <img
+                src={ASSETS.schoolLogo}
+                onError={(e) => { e.currentTarget.src = ASSETS.fallbackLogo; }}
+                alt="شعار المدرسة"
+                className="w-full h-full object-contain"
+              />
             </div>
             <div>
               <h1 className="font-bold text-sm">تدريبات تحسين المهارات</h1>

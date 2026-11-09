@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAppStore } from "@/lib/store";
+import { ASSETS } from "@/lib/assets";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -282,7 +283,8 @@ export function AdminDashboard() {
             <div className="w-12 h-12 flex items-center justify-center">
               { }
               <img
-                src="/school-logo.png"
+                src={ASSETS.schoolLogo}
+                onError={(e) => { e.currentTarget.src = ASSETS.fallbackLogo; }}
                 alt="شعار مدرسة الساحل الأهلية (بنين)"
                 className="w-full h-full object-contain"
               />
@@ -297,7 +299,15 @@ export function AdminDashboard() {
               <Download className="w-4 h-4 ml-1" />
               تصدير PDF
             </Button>
-            <Button variant="ghost" size="sm" onClick={logout} className="text-muted-foreground">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                logout();
+                toast.success("تم تسجيل الخروج بنجاح");
+              }}
+              className="text-muted-foreground hover:text-rose-600 gap-1"
+            >
               <LogOut className="w-4 h-4 ml-1" />
               خروج
             </Button>
@@ -315,12 +325,12 @@ export function AdminDashboard() {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 overflow-x-auto">
-            <TabsTrigger value="overview" className="text-xs md:text-sm">نظرة عامة</TabsTrigger>
-            <TabsTrigger value="skills" className="text-xs md:text-sm">تحليل المهارات</TabsTrigger>
-            <TabsTrigger value="classes" className="text-xs md:text-sm">الفصول والفجوة</TabsTrigger>
-            <TabsTrigger value="users" className="text-xs md:text-sm">إدارة المستخدمين</TabsTrigger>
-            <TabsTrigger value="settings" className="text-xs md:text-sm">الإعدادات</TabsTrigger>
+          <TabsList className="flex flex-wrap sm:grid sm:grid-cols-5 w-full h-auto p-1 gap-1">
+            <TabsTrigger value="overview" className="text-xs md:text-sm flex-1 sm:flex-initial">نظرة عامة</TabsTrigger>
+            <TabsTrigger value="skills" className="text-xs md:text-sm flex-1 sm:flex-initial">تحليل المهارات</TabsTrigger>
+            <TabsTrigger value="classes" className="text-xs md:text-sm flex-1 sm:flex-initial">الفصول والفجوة</TabsTrigger>
+            <TabsTrigger value="users" className="text-xs md:text-sm flex-1 sm:flex-initial">إدارة المستخدمين</TabsTrigger>
+            <TabsTrigger value="settings" className="text-xs md:text-sm flex-1 sm:flex-initial">الإعدادات</TabsTrigger>
           </TabsList>
 
           {/* نظرة عامة */}

@@ -28,7 +28,8 @@ export type QuestionType =
   | "ordering" // ترتيب أحداث
   | "inference" // استنتاج
   | "vocab_context" // معنى مفردة من السياق
-  | "main_idea"; // فكرة رئيسية
+  | "main_idea" // فكرة رئيسية
+  | "details"; // تفاصيل مباشرة
 
 // الصفوف الدراسية المتاحة
 export type GradeKey =
@@ -80,6 +81,8 @@ export interface Question {
   correctAnswer: string; // الإجابة الصحيحة
   orderingEvents?: string[]; // لأسئلة الترتيب - الترتيب الصحيح
   explanation?: string;
+  curriculum?: string; // المنهج المستهدف، مثل "المنهج السعودي 1448"
+  gradeLevel?: string; // الصف الدراسي المستهدف، مثل "الصفوف الأولية (1-3)"
 }
 
 // إجابة طالب على سؤال
@@ -107,6 +110,23 @@ export interface PlacementTestResult {
   // تخزين الأسئلة الكاملة مع النتيجة لعرضها في مراجعة الإجابات
   // حتى بعد مسح currentTest
   questions?: Question[];
+  // تفاصيل اختبار نافس المقترن
+  examId?: string;
+  examTitle?: string;
+}
+
+// تعريف اختبار نافس الوطني المقنن
+export interface NafesExam {
+  id: string;
+  title: string;
+  stage: StageKey;
+  gradeTarget: string; // مثال: "الصف الثالث الابتدائي (نهاية الصفوف الأولية)"
+  curriculum: string; // مثال: "لغتي 1448 - وزارة التعليم"
+  description: string;
+  timeLimitMin: number;
+  badge: string; // مثل "نافس الوطني ETEC" | "نموذج وزاري معتمد" | "محاكي تجريبي"
+  dimensions: string[]; // أبعاد نافس: "الفهم والاسترجاع المباشر", "الاستنتاج", "التفسير والدمج", "التقييم والنقد"
+  questions: Question[];
 }
 
 // خطة تحسين

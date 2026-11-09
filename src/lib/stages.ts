@@ -76,6 +76,7 @@ export const QUESTION_TYPE_LABELS: Record<QuestionType, string> = {
   inference: "استنتاج",
   vocab_context: "معنى مفردة من السياق",
   main_idea: "الفكرة الرئيسية",
+  details: "استخراج التفاصيل",
 };
 
 // مستويات التصنيف

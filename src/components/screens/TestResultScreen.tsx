@@ -13,6 +13,8 @@ import {
   CheckCircle2,
   XCircle,
   ArrowLeft,
+  ArrowRight,
+  LogOut,
   Sparkles,
   Calendar,
   Lightbulb,
@@ -29,10 +31,12 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export function TestResultScreen() {
   const setScreen = useAppStore((s) => s.setScreen);
   const currentUser = useAppStore((s) => s.currentUser);
+  const logout = useAppStore((s) => s.logout);
   const testResults = useAppStore((s) => s.testResults);
   const improvementPlans = useAppStore((s) => s.improvementPlans);
 
@@ -64,18 +68,49 @@ export function TestResultScreen() {
   return (
     <div className="min-h-screen bg-gradient-sea py-6 md:py-10 px-4">
       <div className="max-w-4xl mx-auto">
+        {/* شريط الإجراءات والعودة */}
+        <div className="flex items-center justify-between mb-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setScreen("student_dashboard")}
+            className="text-muted-foreground hover:text-foreground text-xs"
+          >
+            <ArrowRight className="w-4 h-4 ml-1" />
+            لوحة الطالب
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              logout();
+              toast.success("تم تسجيل الخروج بنجاح");
+            }}
+            className="text-muted-foreground hover:text-rose-600 text-xs gap-1"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            تسجيل الخروج
+          </Button>
+        </div>
+
         {/* رأس النتيجة */}
         <div className="text-center mb-8 animate-slide-up">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 mb-4 shadow-lg shadow-emerald-200">
             <Sparkles className="w-10 h-10 text-white" />
           </div>
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold mb-3 shadow-xs">
+            <span>🇸🇦 معتمد وفق معايير نافس ETEC</span>
+            <span>•</span>
+            <span>{latest.examTitle || "اختبار نافس الوطني - لغتي 1448"}</span>
+          </div>
           <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-            تمَّ اختبار تحديد المستوى!
+            اكتمل اختبار نافس الوطني!
           </h1>
           <p className="text-muted-foreground">
             {latest.isInitial
-              ? "تم تقييم مستواك لأول مرة وإنشاء خطة تحسين مناسبة"
-              : "تمت إعادة تقييم مستواك"}
+              ? "تم تقييم أدائك القرائي وفق المعايير الوزارية وإنشاء خطة تحسين مخصصة"
+              : "تم رصد نتيجة إعادة التقييم وتحديث مؤشرات أدائك الوطنية"}
           </p>
         </div>
 
@@ -145,10 +180,10 @@ export function TestResultScreen() {
               const isStrong = skill === strongestSkill[0];
               return (
                 <div key={skill}>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-lg">{SKILL_ICONS[skillKey]}</span>
-                      <span className="font-medium">{SKILL_LABELS[skillKey]}</span>
+                      <span className="font-medium text-sm sm:text-base">{SKILL_LABELS[skillKey]}</span>
                       {isStrong && (
                         <Badge variant="outline" className="text-xs text-emerald-700 border-emerald-300">
                           <TrendingUp className="w-3 h-3 ml-1" />

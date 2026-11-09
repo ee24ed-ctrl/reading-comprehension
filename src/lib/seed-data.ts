@@ -1,5 +1,5 @@
-import type { User, Classroom, ImprovementPlan, PlacementTestResult, SystemSettings, StudentProgress } from "./types";
-import { DEFAULT_SETTINGS } from "./stages";
+import type { User, Classroom, ImprovementPlan, PlacementTestResult, SystemSettings, StudentProgress, SkillKey } from "./types";
+import { DEFAULT_SETTINGS, GRADES } from "./stages";
 
 // إعدادات النظام الافتراضية
 export const DEFAULT_SYSTEM_SETTINGS: SystemSettings = DEFAULT_SETTINGS;
@@ -141,6 +141,28 @@ export const SEED_TEACHERS: User[] = [
     ],
     avatarColor: "#10B981",
   },
+  {
+    id: "t_10",
+    role: "teacher",
+    name: "أ. فيصل الغامدي",
+    email: "teacher_m@saahil.edu",
+    passwordHash: "demo123",
+    createdAt: "2025-08-20T00:00:00Z",
+    approved: true,
+    classroomIds: ["c_m1_a", "c_m2_a", "c_m3_a"], // المرحلة المتوسطة (1، 2، 3 متوسط)
+    avatarColor: "#8B5CF6",
+  },
+  {
+    id: "t_11",
+    role: "teacher",
+    name: "أ. عبدالمحسن العتيبي",
+    email: "teacher_s@saahil.edu",
+    passwordHash: "demo123",
+    createdAt: "2025-08-20T00:00:00Z",
+    approved: true,
+    classroomIds: ["c_s1_a", "c_s2_a", "c_s3_a"], // المرحلة الثانوية (1، 2، 3 ثانوي)
+    avatarColor: "#F59E0B",
+  },
 ];
 
 // مدير النظام
@@ -253,6 +275,15 @@ export function generateSeedTestResults(students: User[]): PlacementTestResult[]
 
     const classification = percentage < 50 ? "support" : percentage < 80 ? "medium" : "excellent";
 
+    const stageKey = student.gradeKey && GRADES[student.gradeKey] ? GRADES[student.gradeKey].stage : "primary_lower";
+    const stageExamTitles: Record<string, { id: string; title: string }> = {
+      primary_lower: { id: "nafes_primary_lower_1", title: "اختبار نافس الوطني - النموذج الأول (الصف الثالث الابتدائي)" },
+      primary_upper: { id: "nafes_primary_upper_1", title: "اختبار نافس الوطني - النموذج الأول (الصف السادس الابتدائي)" },
+      intermediate: { id: "nafes_intermediate_1", title: "اختبار نافس الوطني - النموذج الأول (الصف الثالث المتوسط)" },
+      secondary: { id: "nafes_secondary_1", title: "اختبار نافس والقدرات - النموذج الأول (المرحلة الثانوية)" },
+    };
+    const examInfo = stageExamTitles[stageKey] || stageExamTitles.primary_lower;
+
     results.push({
       id: `result_${student.id}`,
       studentId: student.id,
@@ -265,6 +296,8 @@ export function generateSeedTestResults(students: User[]): PlacementTestResult[]
       skillScores: skillScores as PlacementTestResult["skillScores"],
       durationSec: Math.floor(Math.random() * 600) + 600,
       answers: [],
+      examId: examInfo.id,
+      examTitle: examInfo.title,
     });
   });
   return results;

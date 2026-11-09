@@ -181,7 +181,7 @@ export function ImprovementPlanScreen() {
                     </div>
                     <Progress
                       value={(weekCompleted / weekTasks.length) * 100}
-                      className="h-1.5 w-32"
+                      className="h-1.5 w-20 sm:w-32 flex-shrink-0"
                     />
                   </div>
                   {/* قائمة مهام الأسبوع - قابلة للنقر */}

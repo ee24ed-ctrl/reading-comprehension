@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { BookOpen, SkipForward } from "lucide-react";
+import { ASSETS } from "@/lib/assets";
 
 export function SplashScreen({ type }: { type: "app" | "school" }) {
   const setScreen = useAppStore((s) => s.setScreen);
@@ -10,26 +11,24 @@ export function SplashScreen({ type }: { type: "app" | "school" }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoFailed, setVideoFailed] = useState(false);
 
-  // لأجل شاشة الفلاش الخاصة بالتطبيق: نعرض الفيديو بملء الشاشة
-  // ولأجل شاشة المدرسة: نعرض شعار المدرسة كالمعتاد
+  // لأجل شاشة الفلاش الخاصة بالتطبيق: نعرض الفيديو بملء الشاشة مع تشغيل فوري
+  // ولأجل شاشة المدرسة: نعرض شعار المدرسة
   useEffect(() => {
     if (type === "app") {
-      // شاشة الفيديو - تستمر حتى نهاية الفيديو أو 6 ثوانٍ كحد أقصى
-      // حتى لو فشل الفيديو، ننتقل تلقائياً بعد 6 ثوانٍ
-      const timer1 = setTimeout(() => setPhase("show"), 100);
-      const timer2 = setTimeout(() => setPhase("fade-out"), 5500);
-      const timer3 = setTimeout(() => {
-        setScreen("splash_school");
-      }, 6000);
-      return () => {
-        clearTimeout(timer1);
-        clearTimeout(timer2);
-        clearTimeout(timer3);
-      };
+      // محاولة تشغيل الفيديو فوراً عند التركيب
+      if (videoRef.current) {
+        videoRef.current.play().catch(() => {});
+      }
+      // مؤقت أمان فقط في حال لم يعمل الفيديو أو لم يطلق حدث onEnded (مدة الفيديو 10 ثوانٍ)
+      const safetyTimer = setTimeout(() => {
+        setPhase("fade-out");
+        setTimeout(() => setScreen("splash_school"), 400);
+      }, 11000);
+      return () => clearTimeout(safetyTimer);
     }
 
     // شاشة شعار المدرسة
-    const timer1 = setTimeout(() => setPhase("show"), 100);
+    const timer1 = setTimeout(() => setPhase("show"), 50);
     const timer2 = setTimeout(() => setPhase("fade-out"), 2600);
     const timer3 = setTimeout(() => {
       setScreen("home");
@@ -61,7 +60,7 @@ export function SplashScreen({ type }: { type: "app" | "school" }) {
     setVideoFailed(true);
     setTimeout(() => {
       setScreen("splash_school");
-    }, 500);
+    }, 300);
   };
 
   // ============ شاشة الفيديو (للتطبيق) ============
@@ -71,24 +70,29 @@ export function SplashScreen({ type }: { type: "app" | "school" }) {
         className="fixed inset-0 z-50 flex items-center justify-center bg-black overflow-hidden"
         style={{
           opacity: phase === "fade-out" ? 0 : 1,
-          transition: "opacity 0.6s ease-out",
+          transition: "opacity 0.4s ease-out",
         }}
       >
-        {/* الفيديو يملأ الشاشة بالكامل - مع معالجة الأخطاء */}
+        {/* الفيديو يملأ الشاشة بالكامل - مع تشغيل فوري وتحميل مسبق */}
         {!videoFailed && (
           <video
             ref={videoRef}
             className="absolute inset-0 w-full h-full object-cover"
-            src="/app-intro.mp4"
+            src={ASSETS.appIntroVideo}
             autoPlay
             muted
             playsInline
+            preload="auto"
+            onLoadedData={() => {
+              setPhase("show");
+              videoRef.current?.play().catch(() => {});
+            }}
+            onPlaying={() => setPhase("show")}
             onEnded={handleVideoEnded}
             onError={handleVideoError}
-            // التحكم في حجم الفيديو للحفاظ على النسبة
             style={{
-              opacity: phase === "fade-in" ? 0 : 1,
-              transition: "opacity 0.8s ease-out",
+              opacity: phase === "fade-in" ? 0.4 : 1,
+              transition: "opacity 0.3s ease-out",
             }}
           />
         )}
@@ -196,7 +200,8 @@ export function SplashScreen({ type }: { type: "app" | "school" }) {
         {/* شعار المدرسة - الصورة الفعلية بدون إطار */}
         <div className="relative w-48 h-48 md:w-64 md:h-64 mb-8 flex items-center justify-center">
           <img
-            src="/school-logo.png"
+            src={ASSETS.schoolLogo}
+            onError={(e) => { e.currentTarget.src = ASSETS.fallbackLogo; }}
             alt="شعار مدرسة الساحل الأهلية (بنين)"
             className="w-full h-full object-contain drop-shadow-lg"
           />
@@ -213,7 +218,7 @@ export function SplashScreen({ type }: { type: "app" | "school" }) {
 
       {/* ملاحظة: يمكن استبدال الشعارين برفع ملف صورة */}
       <div className="absolute bottom-6 text-xs text-muted-foreground/60">
-        {type === "app" ? "منصة تعليمية تفاعلية" : getAcademicYear()}
+        {getAcademicYear()}
       </div>
     </div>
   );

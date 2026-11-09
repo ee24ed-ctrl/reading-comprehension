@@ -16,6 +16,7 @@ import type {
   TrainingExercise,
   TrainingResult,
   PostTest,
+  GradeKey,
 } from "./types";
 import {
   SEED_CLASSROOMS,
@@ -28,6 +29,7 @@ import {
 } from "./seed-data";
 import { getPlacementTestQuestions } from "./questions";
 import { getTrainingsBySkill, getTrainingsByLevel } from "./trainings";
+import { NAFES_EXAMS, getNafesExamById, getNafesExamsByStage } from "./nafes-exams";
 
 // شاشات التطبيق
 export type Screen =
@@ -56,6 +58,7 @@ interface AppState {
   // المستخدم الحالي
   currentUser: User | null;
   login: (email: string, password: string, role: UserRole) => { success: boolean; message: string };
+  quickLogin: (userId: string) => { success: boolean; message: string };
   register: (data: RegisterData) => { success: boolean; message: string };
   logout: () => void;
 
@@ -74,8 +77,12 @@ interface AppState {
     answers: { questionId: string; selectedAnswer: string; timeSpentSec: number }[];
     startedAt: number;
     timeLimitSec: number;
+    examId?: string;
+    examTitle?: string;
+    stage?: StageKey;
   } | null;
   startPlacementTest: (stage: StageKey) => void;
+  startNafesExam: (examId: string) => void;
   answerQuestion: (questionId: string, selectedAnswer: string) => void;
   nextQuestion: () => void;
   previousQuestion: () => void;
@@ -152,7 +159,7 @@ interface RegisterData {
   name: string;
   email: string;
   password: string;
-  gradeKey?: string;
+  gradeKey?: GradeKey;
   classroomId?: string;
   academicNumber?: string;
 }
@@ -184,23 +191,42 @@ export const useAppStore = create<AppState>()(
         setScreen: (screen) => set({ currentScreen: screen }),
 
         currentUser: null,
-        login: (email, password, role) => {
-          const user = get().users.find(
-            (u) => u.email === email && u.passwordHash === password && u.role === role
+        login: (identifier, password, role) => {
+          const cleanId = identifier.trim().toLowerCase();
+          // البحث أولاً بالبريد أو الرقم الأكاديمي أو المعرف مع مطابقة كلمة المرور والدور
+          let user = get().users.find(
+            (u) =>
+              (u.email.toLowerCase() === cleanId ||
+                u.academicNumber?.toLowerCase() === cleanId ||
+                u.id.toLowerCase() === cleanId) &&
+              u.passwordHash === password &&
+              u.role === role
           );
+          // إذا لم يتطابق الدور ولكن تطابق البريد وكلمة المرور، نقبله بدوره المسجل في النظام
           if (!user) {
-            return { success: false, message: "بيانات الدخول غير صحيحة. تأكد من البريد وكلمة المرور والدور." };
+            user = get().users.find(
+              (u) =>
+                (u.email.toLowerCase() === cleanId ||
+                  u.academicNumber?.toLowerCase() === cleanId ||
+                  u.id.toLowerCase() === cleanId) &&
+                u.passwordHash === password
+            );
+          }
+          if (!user) {
+            return {
+              success: false,
+              message: "بيانات الدخول غير صحيحة. يرجى التأكد من البريد الإلكتروني وكلمة المرور.",
+            };
           }
           if (user.role === "teacher" && !user.approved) {
             return {
               success: false,
-              message: "حسابك بانتظار اعتماد مدير النظام. سيتم إعلامك عند تفعيله.",
+              message: "حساب المعلم بانتظار اعتماد مدير النظام. سيتم إعلامك عند تفعيله.",
             };
           }
           set({ currentUser: user });
           // توجيه حسب الدور
           if (user.role === "student") {
-            // الطالب: تحقق إن كان قد أجرى اختبار تحديد المستوى
             const hasInitial = get().testResults.some(
               (r) => r.studentId === user.id && r.isInitial
             );
@@ -216,7 +242,32 @@ export const useAppStore = create<AppState>()(
           } else if (user.role === "admin") {
             set({ currentScreen: "admin_dashboard" });
           }
-          return { success: true, message: "تم تسجيل الدخول بنجاح" };
+          return { success: true, message: `تم تسجيل الدخول بنجاح! أهلاً بك، ${user.name}` };
+        },
+
+        quickLogin: (userId: string) => {
+          const user = get().users.find((u) => u.id === userId);
+          if (!user) {
+            return { success: false, message: "المستخدم غير موجود" };
+          }
+          set({ currentUser: user });
+          if (user.role === "student") {
+            const hasInitial = get().testResults.some(
+              (r) => r.studentId === user.id && r.isInitial
+            );
+            if (!hasInitial && user.gradeKey) {
+              const stage = getStageFromGrade(user.gradeKey);
+              get().startPlacementTest(stage);
+              set({ currentScreen: "placement_test" });
+            } else {
+              set({ currentScreen: "student_dashboard" });
+            }
+          } else if (user.role === "teacher") {
+            set({ currentScreen: "teacher_dashboard" });
+          } else if (user.role === "admin") {
+            set({ currentScreen: "admin_dashboard" });
+          }
+          return { success: true, message: `أهلاً بك، ${user.name}` };
         },
 
         register: (data) => {
@@ -259,7 +310,13 @@ export const useAppStore = create<AppState>()(
         },
 
         logout: () => {
-          set({ currentUser: null, currentScreen: "home", currentTest: null });
+          set({
+            currentUser: null,
+            currentScreen: "home",
+            currentTest: null,
+            currentTraining: null,
+            currentPostTest: null,
+          });
         },
 
         users: initial.users,
@@ -276,9 +333,14 @@ export const useAppStore = create<AppState>()(
 
         currentTest: null,
         startPlacementTest: (stage) => {
+          // جلب أول نموذج نافس معتمد للمرحلة
+          const defaultNafesExam = getNafesExamsByStage(stage)[0];
+          if (defaultNafesExam) {
+            get().startNafesExam(defaultNafesExam.id);
+            return;
+          }
           const count = get().settings.placementTestQuestionCount;
           const questions = getPlacementTestQuestions(stage, count);
-          // دمج الأسئلة الافتراضية مع المخصصة
           const customStageQs = get().customQuestions.filter((q) => q.stage === stage);
           const allQuestions = [...questions, ...customStageQs].slice(0, count);
           set({
@@ -288,7 +350,28 @@ export const useAppStore = create<AppState>()(
               answers: [],
               startedAt: Date.now(),
               timeLimitSec: get().settings.testTimeLimitMin * 60,
+              stage,
+              examTitle: "اختبار تحديد المستوى - المنهج السعودي 1448",
             },
+            currentScreen: "placement_test",
+          });
+        },
+
+        startNafesExam: (examId: string) => {
+          const exam = getNafesExamById(examId);
+          if (!exam) return;
+          set({
+            currentTest: {
+              questions: exam.questions,
+              currentQuestionIndex: 0,
+              answers: [],
+              startedAt: Date.now(),
+              timeLimitSec: exam.timeLimitMin * 60,
+              examId: exam.id,
+              examTitle: exam.title,
+              stage: exam.stage,
+            },
+            currentScreen: "placement_test",
           });
         },
 
@@ -379,6 +462,8 @@ export const useAppStore = create<AppState>()(
             // تخزين نسخة من الأسئلة مع النتيجة لعرضها في مراجعة الإجابات
             // حتى بعد مسح currentTest
             questions: [...test.questions],
+            examId: test.examId,
+            examTitle: test.examTitle,
           };
 
           set({
@@ -802,6 +887,17 @@ export const useAppStore = create<AppState>()(
           // تحقق من وجود settings
           if (!persistedState.settings || typeof persistedState.settings !== "object") {
             persistedState.settings = DEFAULT_SYSTEM_SETTINGS;
+          }
+          // التأكد من توفر جميع المعلمين والمدير لجميع المراحل
+          if (Array.isArray(persistedState.users)) {
+            for (const t of SEED_TEACHERS) {
+              if (!persistedState.users.some((u: any) => u.id === t.id)) {
+                persistedState.users.push(t);
+              }
+            }
+            if (!persistedState.users.some((u: any) => u.id === SEED_ADMIN.id)) {
+              persistedState.users.push(SEED_ADMIN);
+            }
           }
           return persistedState;
         } catch (e) {

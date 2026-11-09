@@ -256,7 +256,7 @@ export function PostTestScreen() {
         </Card>
 
         {/* أزرار التنقل */}
-        <div className="mt-6 flex items-center justify-between gap-3">
+        <div className="mt-6 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3">
           <Button
             variant="outline"
             onClick={previousPostTestQuestion}
@@ -267,7 +267,7 @@ export function PostTestScreen() {
             السابق
           </Button>
 
-          <div className="text-xs text-muted-foreground">
+          <div className="order-3 sm:order-2 w-full sm:w-auto text-center flex items-center justify-center gap-2 text-xs text-muted-foreground">
             {answeredCount === test.questions.length ? (
               <Badge variant="default" className="bg-emerald-600">
                 <CheckCircle2 className="w-3 h-3 ml-1" />
