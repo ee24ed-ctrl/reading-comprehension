@@ -263,3 +263,4 @@ export function StoryIllustration({ theme, className = "w-full h-48" }: StoryIll
       );
   }
 }
+
