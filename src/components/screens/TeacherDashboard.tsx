@@ -43,6 +43,9 @@ import {
   Save,
   Target,
   GraduationCap,
+  Flame,
+  Sparkles,
+  Award,
 } from "lucide-react";
 import {
   CLASSIFICATION_INFO,
@@ -54,6 +57,7 @@ import {
   STAGE_ORDER,
 } from "@/lib/stages";
 import { NAFES_EXAMS, getNafesExamsByStage } from "@/lib/nafes-exams";
+import { DAILY_STORIES } from "@/lib/daily-stories";
 import type { Question, QuestionType, SkillKey, StageKey } from "@/lib/types";
 import { toast } from "sonner";
 
@@ -71,10 +75,14 @@ export function TeacherDashboard() {
   const updatePlan = useAppStore((s) => s.updatePlan);
   const startNafesExam = useAppStore((s) => s.startNafesExam);
   const settings = useAppStore((s) => s.settings);
+  const dailyReadingLogs = useAppStore((s) => s.dailyReadingLogs || []);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [filterClass, setFilterClass] = useState<string>("all");
   const [filterLevel, setFilterLevel] = useState<string>("all");
+  const [dailyClassFilter, setDailyClassFilter] = useState<string>("all");
+  const [dailyStatusFilter, setDailyStatusFilter] = useState<string>("all");
+  const [dailySearchTerm, setDailySearchTerm] = useState("");
   const [nafesStageFilter, setNafesStageFilter] = useState<string>("all");
   const [showAddQuestion, setShowAddQuestion] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
@@ -124,6 +132,60 @@ export function TeacherDashboard() {
     })
     .slice(0, 5);
 
+  // إحصائيات ومتابعة القراءة اليومية لطلاب المعلم
+  const todayStr = new Date().toISOString().split("T")[0];
+
+  const studentsWithDailyReading = myStudents.map((s) => {
+    const studentLogs = dailyReadingLogs.filter((l) => l.studentId === s.id);
+    const readTodayLog = studentLogs.find((l) => l.completedAt.startsWith(todayStr));
+    const totalCompleted = studentLogs.length;
+    const avgScore = totalCompleted > 0
+      ? (studentLogs.reduce((acc, l) => acc + (l.score || 0), 0) / totalCompleted).toFixed(1)
+      : null;
+    const classroom = classrooms.find((c) => c.id === s.classroomId);
+    const latestLog = [...studentLogs].sort(
+      (a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime()
+    )[0];
+    const latestStory = latestLog ? DAILY_STORIES.find((st) => st.id === latestLog.storyId) : null;
+
+    return {
+      student: s,
+      classroom,
+      readToday: !!readTodayLog,
+      todayLog: readTodayLog || null,
+      totalCompleted,
+      avgScore,
+      streak: s.streakDays || (readTodayLog ? 1 : 0),
+      latestLog,
+      latestStory,
+    };
+  });
+
+  const readTodayStudentsCount = studentsWithDailyReading.filter((s) => s.readToday).length;
+  const readTodayPercentage = myStudents.length > 0
+    ? Math.round((readTodayStudentsCount / myStudents.length) * 100)
+    : 0;
+  const totalCompletedStoriesTeacher = dailyReadingLogs.filter((l) =>
+    myStudents.some((s) => s.id === l.studentId)
+  ).length;
+  const topStreakInClass = studentsWithDailyReading.reduce(
+    (max, s) => Math.max(max, s.streak),
+    0
+  );
+
+  const filteredDailyReading = studentsWithDailyReading.filter(({ student, readToday }) => {
+    if (dailyClassFilter !== "all" && student.classroomId !== dailyClassFilter) return false;
+    if (dailyStatusFilter === "read" && !readToday) return false;
+    if (dailyStatusFilter === "not_read" && readToday) return false;
+    if (dailySearchTerm.trim()) {
+      const q = dailySearchTerm.toLowerCase();
+      const matchName = student.name.toLowerCase().includes(q);
+      const matchNumber = student.academicNumber?.toLowerCase().includes(q);
+      if (!matchName && !matchNumber) return false;
+    }
+    return true;
+  });
+
   return (
     <div className="min-h-screen bg-gradient-sea">
       {/* الرأس */}
@@ -169,8 +231,11 @@ export function TeacherDashboard() {
         </div>
 
         <Tabs defaultValue="students" className="space-y-4">
-          <TabsList className="flex flex-wrap sm:grid sm:grid-cols-5 w-full h-auto p-1 gap-1">
+          <TabsList className="flex flex-wrap sm:grid sm:grid-cols-6 w-full h-auto p-1 gap-1">
             <TabsTrigger value="students" className="text-xs md:text-sm flex-1 sm:flex-initial">طلابي</TabsTrigger>
+            <TabsTrigger value="daily-reading" className="text-xs md:text-sm font-bold text-amber-900 bg-amber-50/70 data-[state=active]:bg-amber-600 data-[state=active]:text-white flex-1 sm:flex-initial">
+              📖 القراءة اليومية ({readTodayStudentsCount}/{myStudents.length})
+            </TabsTrigger>
             <TabsTrigger value="nafes" className="text-xs md:text-sm font-bold text-emerald-700 data-[state=active]:bg-emerald-600 data-[state=active]:text-white flex-1 sm:flex-initial">
               🇸🇦 نافس ({NAFES_EXAMS.length})
             </TabsTrigger>
@@ -305,6 +370,224 @@ export function TeacherDashboard() {
                   {filteredStudents.length === 0 && (
                     <div className="text-center py-8 text-sm text-muted-foreground">
                       لا يوجد طلاب مطابقون للبحث
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* تبويب متابعة القراءة اليومية للمعلم */}
+          <TabsContent value="daily-reading" className="space-y-4">
+            {/* بطاقات المؤشرات السريعة للقراءة */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <Card className="border-amber-200 bg-amber-50/40">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center font-bold">
+                    <BookOpen className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground font-medium">قرأوا قصة اليوم</div>
+                    <div className="text-lg font-bold text-amber-950">
+                      {readTodayStudentsCount} <span className="text-xs font-normal text-muted-foreground">من {myStudents.length}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-emerald-200 bg-emerald-50/40">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold">
+                    <TrendingUp className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground font-medium">نسبة التفاعل اليومي</div>
+                    <div className="text-lg font-bold text-emerald-900">{readTodayPercentage}%</div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-sky-200 bg-sky-50/40">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-sky-100 text-sky-800 flex items-center justify-center font-bold">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground font-medium">إجمالي القصص المكتملة</div>
+                    <div className="text-lg font-bold text-sky-950">{totalCompletedStoriesTeacher}</div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-orange-200 bg-orange-50/40">
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-800 flex items-center justify-center font-bold">
+                    <Flame className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground font-medium">أطول مواظبة (Streak)</div>
+                    <div className="text-lg font-bold text-orange-950">{topStreakInClass} أيام</div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-lg text-amber-950">
+                      <BookOpen className="w-5 h-5 text-amber-600" />
+                      متابعة القراءة اليومية لطلاب الفصول
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      متابعة لحظية لقراءة القصص المصورة وإجابات أسئلة الفهم القرائي الثلاثة لكل طالب
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+                    <div className="relative w-full sm:w-40">
+                      <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        placeholder="بحث عن طالب..."
+                        value={dailySearchTerm}
+                        onChange={(e) => setDailySearchTerm(e.target.value)}
+                        className="pr-9 w-full sm:w-40 text-sm"
+                      />
+                    </div>
+
+                    <Select value={dailyClassFilter} onValueChange={setDailyClassFilter}>
+                      <SelectTrigger className="w-full sm:w-36 text-sm">
+                        <SelectValue placeholder="كل الفصول" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">كل الفصول</SelectItem>
+                        {myClassrooms.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={dailyStatusFilter} onValueChange={setDailyStatusFilter}>
+                      <SelectTrigger className="w-full sm:w-36 text-sm">
+                        <SelectValue placeholder="الحالة اليوم" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">كل الحالات</SelectItem>
+                        <SelectItem value="read">قرأ قصة اليوم ✅</SelectItem>
+                        <SelectItem value="not_read">لم يقرأ اليوم ⏳</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>الطالب</TableHead>
+                        <TableHead>الفصل</TableHead>
+                        <TableHead>قراءة اليوم</TableHead>
+                        <TableHead>أسئلة الفهم اليوم</TableHead>
+                        <TableHead>المواظبة 🔥</TableHead>
+                        <TableHead>إجمالي القصص</TableHead>
+                        <TableHead>آخر قصة مقروءة</TableHead>
+                        <TableHead>التفاصيل</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredDailyReading.map(({ student, classroom, readToday, todayLog, totalCompleted, streak, latestLog, latestStory }) => (
+                        <TableRow key={student.id} className="hover:bg-muted/30">
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                                style={{ background: student.avatarColor }}
+                              >
+                                {student.name.charAt(0)}
+                              </div>
+                              <div>
+                                <div className="font-medium text-sm">{student.name}</div>
+                                <div className="text-xs text-muted-foreground">{student.academicNumber}</div>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">
+                              {classroom?.name || "—"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {readToday ? (
+                              <Badge className="bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200 text-xs">
+                                <CheckCircle2 className="w-3 h-3 ml-1 text-emerald-600 inline" />
+                                أنجز قصة اليوم
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-amber-800 bg-amber-50 border-amber-200 text-xs">
+                                <Clock className="w-3 h-3 ml-1 text-amber-600 inline" />
+                                بانتظار القراءة
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {todayLog ? (
+                              <div className="flex items-center gap-1 font-mono font-bold text-xs">
+                                <span className={todayLog.score === 3 ? "text-emerald-700" : todayLog.score >= 2 ? "text-sky-700" : "text-amber-700"}>
+                                  {todayLog.score} / 3
+                                </span>
+                                <span className="text-[10px] text-muted-foreground font-sans">
+                                  ({Math.round((todayLog.score / 3) * 100)}%)
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {streak > 0 ? (
+                              <Badge variant="outline" className="bg-orange-50 text-orange-800 border-orange-200 text-xs font-bold gap-1">
+                                <Flame className="w-3 h-3 text-orange-600 fill-orange-500" />
+                                {streak} {streak === 1 ? "يوم" : "أيام"}
+                              </Badge>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">0</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <span className="font-bold text-xs font-mono">{totalCompleted}</span>
+                          </TableCell>
+                          <TableCell>
+                            {latestStory ? (
+                              <div className="max-w-[160px] truncate">
+                                <div className="text-xs font-medium truncate">{latestStory.title}</div>
+                                <div className="text-[10px] text-muted-foreground">
+                                  {latestLog ? new Date(latestLog.completedAt).toLocaleDateString("ar-SA") : ""}
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">لم يبدأ بعد</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setSelectedStudentId(student.id)}
+                              title="عرض سجل القراءة وتفاصيل الطالب"
+                            >
+                              <Eye className="w-4 h-4 text-primary" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+
+                  {filteredDailyReading.length === 0 && (
+                    <div className="text-center py-8 text-sm text-muted-foreground">
+                      لا يوجد طلاب مطابقون للبحث في قسم القراءة اليومية
                     </div>
                   )}
                 </div>
@@ -912,6 +1195,7 @@ function StudentDetailDialog({ studentId, onClose }: { studentId: string | null;
   const classrooms = useAppStore((s) => s.classrooms);
   const trainingResults = useAppStore((s) => s.trainingResults);
   const postTests = useAppStore((s) => s.postTests);
+  const dailyReadingLogs = useAppStore((s) => s.dailyReadingLogs || []);
 
   if (!studentId) return null;
   const student = users.find((u) => u.id === studentId);
@@ -923,13 +1207,16 @@ function StudentDetailDialog({ studentId, onClose }: { studentId: string | null;
   const latest = results[0];
   const plan = improvementPlans.find((p) => p.studentId === studentId);
 
-  // نتائج التدريبات والاختبارات البعدية للطالب
+  // نتائج التدريبات والاختبارات البعدية وسجل القراءة اليومية للطالب
   const studentTrainings = trainingResults
     .filter((r) => r.studentId === studentId)
     .sort((a, b) => new Date(b.takenAt).getTime() - new Date(a.takenAt).getTime());
   const studentPostTests = postTests
     .filter((p) => p.studentId === studentId)
     .sort((a, b) => new Date(b.takenAt).getTime() - new Date(a.takenAt).getTime());
+  const studentReadingLogs = dailyReadingLogs
+    .filter((l) => l.studentId === studentId)
+    .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime());
   const classroom = classrooms.find((c) => c.id === student.classroomId);
 
   return (
@@ -1116,6 +1403,80 @@ function StudentDetailDialog({ studentId, onClose }: { studentId: string | null;
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* سجل القراءة اليومية والقصص المصورة */}
+          <Card className="border-amber-200">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <CardTitle className="text-sm flex items-center gap-2 text-amber-950">
+                  <BookOpen className="w-4 h-4 text-amber-600" />
+                  سجل القراءة اليومية ({studentReadingLogs.length} قصة منجزة)
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="bg-orange-50 text-orange-800 border-orange-200 text-xs font-bold gap-1">
+                    <Flame className="w-3 h-3 text-orange-600 fill-orange-500" />
+                    المواظبة: {student.streakDays || 0} أيام
+                  </Badge>
+                  <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200 text-xs font-bold gap-1">
+                    <Sparkles className="w-3 h-3 text-amber-600" />
+                    النقاط: {student.points || 0}
+                  </Badge>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {studentReadingLogs.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  لم يبدأ الطالب قراءة القصص اليومية بعد
+                </p>
+              ) : (
+                <div className="space-y-2 max-h-48 overflow-y-auto custom-scroll">
+                  {studentReadingLogs.map((log) => {
+                    const story = DAILY_STORIES.find((st) => st.id === log.storyId);
+                    return (
+                      <div
+                        key={log.id}
+                        className="flex items-center justify-between text-xs p-2.5 border rounded-lg bg-card hover:bg-muted/30 transition-colors"
+                      >
+                        <div className="flex-1 min-w-0 pr-2">
+                          <div className="font-bold text-sm truncate text-foreground">
+                            {story ? story.title : `قصة رقم #${log.storyId}`}
+                          </div>
+                          <div className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-2 flex-wrap">
+                            <span>{new Date(log.completedAt).toLocaleDateString("ar-SA")}</span>
+                            <span>•</span>
+                            <span>الوقت: {Math.round((log.timeSpentSec || 0) / 60)} د</span>
+                            {story && (
+                              <>
+                                <span>•</span>
+                                <Badge variant="secondary" className="text-[10px] h-4 py-0 px-1.5">
+                                  {story.gradeLevelLabel}
+                                </Badge>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <Badge
+                            className={`text-xs font-mono font-bold ${
+                              log.score === 3
+                                ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                                : log.score >= 2
+                                ? "bg-sky-100 text-sky-800 border-sky-300"
+                                : "bg-amber-100 text-amber-800 border-amber-300"
+                            }`}
+                          >
+                            درجة الفهم: {log.score} / 3
+                          </Badge>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
